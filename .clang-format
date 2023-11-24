@@ -1,0 +1,14 @@
+# to apply the script:  find -E . -regex '.*\.(cpp|hpp|cc|cxx|hxx)' -exec clang-format -style=file -i {} \;
+---
+# We'll use defaults from the Google style, but with 4 columns indentation.
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+---
+Language: Cpp
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Right
+BreakBeforeBraces: Stroustrup
+...
+
