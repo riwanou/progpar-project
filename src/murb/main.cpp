@@ -181,7 +181,6 @@ std::string strDate(float timestamp)
 SimulationNBodyInterface *createImplem()
 {
     SimulationNBodyInterface *simu = nullptr;
-
     if (ImplTag == "cpu+naive") {
         simu = new SimulationNBodyNaive(NBodies, BodiesScheme, Softening);
     }
@@ -189,14 +188,6 @@ SimulationNBodyInterface *createImplem()
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
         exit(-1);
     }
-
-#ifdef USE_OCL
-    if (ImplTag.find("ocl") != std::string::npos) {
-        SimulationNBodyOpenCL *simuocl = static_cast<SimulationNBodyOpenCL *>(simu);
-        simuocl->printclInfo();
-    }
-#endif
-
     return simu;
 }
 
