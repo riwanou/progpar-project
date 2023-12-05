@@ -114,9 +114,13 @@ template <typename T> void OGLSpheresVisuGS<T>::refreshDisplay()
                 max = std::max(max, norm);
             }
 
-            static uint8_t MAPPING_R[16] = {66, 25, 9, 4, 0, 12, 24, 57, 134, 211, 241, 248, 255, 204, 153, 106};
-            static uint8_t MAPPING_G[16] = {30, 7, 1, 4, 7, 44, 82, 125, 181, 236, 233, 201, 170, 128, 87, 52};
-            static uint8_t MAPPING_B[16] = {15, 26, 47, 73, 100, 138, 177, 209, 229, 248, 191, 95, 0, 0, 0, 3};
+            static uint8_t MAPPING_R[16] = {106, 153, 204, 255, 248, 241, 211, 134,  57,  24,  12,   0,  4,  9, 25, 66};
+            static uint8_t MAPPING_G[16] = { 52,  87, 128, 170, 201, 233, 236, 181, 125,  82,  44,   7,  4,  1,  7, 30};
+            static uint8_t MAPPING_B[16] = {  3,   0,   0,   0,  95, 191, 248, 229, 209, 177, 138, 100, 73, 47, 26, 15};
+
+            // static uint8_t MAPPING_R[10] = { 3, 55, 106, 157, 208, 220, 232, 244, 250, 255};
+            // static uint8_t MAPPING_G[10] = { 7,  6,   4,   2,   0,  47,  93, 140, 163, 186};
+            // static uint8_t MAPPING_B[10] = {30, 23,  15,   8,   0,   2,   4,   6,   7,   8};
 
             for (long unsigned int i = 0; i < this->nSpheres; i++) {
                 const float norm = this->colorBuffer[i * 3 + 0];
@@ -127,9 +131,9 @@ template <typename T> void OGLSpheresVisuGS<T>::refreshDisplay()
                 const float mix = (norm - min) / (max - min);
                 const int n = (int)(mix * colorRange);
 
-                const float red = MAPPING_R[(colorRange - n) % 16] / 255.f;
-                const float green = MAPPING_G[(colorRange - n) % 16] / 255.f;
-                const float blue = MAPPING_B[(colorRange - n) % 16] / 255.f;
+                const float red = MAPPING_R[(n) % sizeof(MAPPING_R)] / 255.f;
+                const float green = MAPPING_G[(n) % sizeof(MAPPING_G)] / 255.f;
+                const float blue = MAPPING_B[(n) % sizeof(MAPPING_B)] / 255.f;
 
                 this->colorBuffer[i * 3 + 0] = red;
                 this->colorBuffer[i * 3 + 1] = green;

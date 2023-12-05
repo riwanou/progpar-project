@@ -30,7 +30,7 @@ install some dependencies: `OpenGL >= 3.0`, `GLEW >= 1.11.0`, `GLM >= 0.9.5.4`
 and `GLFW >= 3.0.4` libraries are required. If one on these libraries is missing 
 on your system, then `MUrB` will be compiled in console mode only.
 
-On Ubuntu 20.04 you can install the requires libraries as follow:
+On Ubuntu 20.04 you can install the required libraries as follow:
 
 ```bash
 sudo apt install libglfw3-dev libglew-dev libglm-dev
