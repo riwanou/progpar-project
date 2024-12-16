@@ -9,7 +9,7 @@
 #include "SimulationNBodyNaive.hpp"
 #include "SimulationNBodyOptim1.hpp"
 
-void test_nbody_array(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
+void test_nbody_optim1(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
                      const float eps)
 {
     SimulationNBodyNaive simuRef(n, scheme, soft);
@@ -44,17 +44,17 @@ void test_nbody_array(const size_t n, const float soft, const float dt, const si
 
 TEST_CASE("n-body - Optim1", "[optim1]")
 {
-    SECTION("fp32 - n=13 - i=1 - random") { test_nbody_array(13, 2e+08, 3600, 1, "random", 1e-3); }
-    SECTION("fp32 - n=13 - i=100 - random") { test_nbody_array(13, 2e+08, 3600, 100, "random", 5e-3); }
-    SECTION("fp32 - n=16 - i=1 - random") { test_nbody_array(16, 2e+08, 3600, 1, "random", 1e-3); }
-    SECTION("fp32 - n=128 - i=1 - random") { test_nbody_array(128, 2e+08, 3600, 1, "random", 1e-3); }
-    SECTION("fp32 - n=2048 - i=1 - random") { test_nbody_array(2048, 2e+08, 3600, 1, "random", 1e-3); }
-    SECTION("fp32 - n=2049 - i=3 - random") { test_nbody_array(2049, 2e+08, 3600, 3, "random", 1e-3); }
+    SECTION("fp32 - n=13 - i=1 - random") { test_nbody_optim1(13, 2e+08, 3600, 1, "random", 1e-3); }
+    SECTION("fp32 - n=13 - i=100 - random") { test_nbody_optim1(13, 2e+08, 3600, 100, "random", 5e-3); }
+    SECTION("fp32 - n=16 - i=1 - random") { test_nbody_optim1(16, 2e+08, 3600, 1, "random", 1e-3); }
+    SECTION("fp32 - n=128 - i=1 - random") { test_nbody_optim1(128, 2e+08, 3600, 1, "random", 1e-3); }
+    SECTION("fp32 - n=2048 - i=1 - random") { test_nbody_optim1(2048, 2e+08, 3600, 1, "random", 1e-3); }
+    SECTION("fp32 - n=2049 - i=3 - random") { test_nbody_optim1(2049, 2e+08, 3600, 3, "random", 1e-3); }
 
-    SECTION("fp32 - n=13 - i=1 - galaxy") { test_nbody_array(13, 2e+08, 3600, 1, "galaxy", 1e-1); }
-    SECTION("fp32 - n=13 - i=30 - galaxy") { test_nbody_array(13, 2e+08, 3600, 30, "galaxy", 1e-1); }
-    SECTION("fp32 - n=16 - i=1 - galaxy") { test_nbody_array(16, 2e+08, 3600, 1, "galaxy", 1e-2); }
-    SECTION("fp32 - n=128 - i=1 - galaxy") { test_nbody_array(128, 2e+08, 3600, 1, "galaxy", 1e-2); }
-    SECTION("fp32 - n=2048 - i=4 - galaxy") { test_nbody_array(2048, 2e+08, 3600, 4, "galaxy", 1e-1); }
-    SECTION("fp32 - n=2049 - i=3 - galaxy") { test_nbody_array(2049, 2e+08, 3600, 3, "galaxy", 1e-1); }
+    SECTION("fp32 - n=13 - i=1 - galaxy") { test_nbody_optim1(13, 2e+08, 3600, 1, "galaxy", 1e-1); }
+    SECTION("fp32 - n=13 - i=30 - galaxy") { test_nbody_optim1(13, 2e+08, 3600, 30, "galaxy", 1e-1); }
+    SECTION("fp32 - n=16 - i=1 - galaxy") { test_nbody_optim1(16, 2e+08, 3600, 1, "galaxy", 1e-2); }
+    SECTION("fp32 - n=128 - i=1 - galaxy") { test_nbody_optim1(128, 2e+08, 3600, 1, "galaxy", 1e-2); }
+    SECTION("fp32 - n=2048 - i=4 - galaxy") { test_nbody_optim1(2048, 2e+08, 3600, 4, "galaxy", 1e-1); }
+    SECTION("fp32 - n=2049 - i=3 - galaxy") { test_nbody_optim1(2049, 2e+08, 3600, 3, "galaxy", 1e-1); }
 }
