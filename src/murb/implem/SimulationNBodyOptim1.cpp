@@ -11,7 +11,7 @@ SimulationNBodyOptim1::SimulationNBodyOptim1(const unsigned long nBodies, const 
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 30.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
+    this->flopsPerIte = 27.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
     this->accelerations.resize(this->getBodies().getN());
 }
 
@@ -28,7 +28,7 @@ void SimulationNBodyOptim1::computeBodiesAcceleration()
 {
     const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
     // compute e²
-    const float softSquared = std::pow(this->soft, 2); // 1 flops
+    const float softSquared = std::pow(this->soft, 2);
 
     // flops = n² * 20
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
@@ -40,10 +40,13 @@ void SimulationNBodyOptim1::computeBodiesAcceleration()
 
             // compute the || rij ||² distance between body i and body j
             const float rijSquared = std::pow(rijx, 2) + std::pow(rijy, 2) + std::pow(rijz, 2); // 5 flops
-            // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-            const float ai = this->G * d[jBody].m / std::pow(rijSquared + softSquared, 3.f / 2.f); // 5 flops
-            // compute the acceleration value between body i and body j: || aj || = G.mj / (|| rij ||² + e²)^{3/2}
-            const float aj = this->G * d[iBody].m / std::pow(rijSquared + softSquared, 3.f / 2.f); // 5 flops
+
+            // compute the distance between the bodies: (|| rij ||² + e²)^{3/2}            
+            float distance = std::pow(rijSquared + softSquared, 3.f / 2.f); // 2 flops
+            // compute the acceleration value between body i and body j: || ai || = G.mj / distance
+            const float ai = this->G * d[jBody].m / distance; // 3 flops
+            // compute the acceleration value between body i and body j: || aj || = G.mj / distance
+            const float aj = this->G * d[iBody].m / distance; // 3 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
             this->accelerations[iBody].ax += ai * rijx; // 2 flops
