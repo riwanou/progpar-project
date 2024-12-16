@@ -5,9 +5,9 @@
 #include <limits>
 #include <string>
 
-#include "SimulationNBodyOptim1.hpp"
+#include "SimulationNBodyOptim1Approx.hpp"
 
-SimulationNBodyOptim1::SimulationNBodyOptim1(const unsigned long nBodies, const std::string &scheme, const float soft,
+SimulationNBodyOptim1Approx::SimulationNBodyOptim1Approx(const unsigned long nBodies, const std::string &scheme, const float soft,
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
@@ -15,7 +15,7 @@ SimulationNBodyOptim1::SimulationNBodyOptim1(const unsigned long nBodies, const 
     this->accelerations.resize(this->getBodies().getN());
 }
 
-void SimulationNBodyOptim1::initIteration()
+void SimulationNBodyOptim1Approx::initIteration()
 {
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
         this->accelerations[iBody].ax = 0.f;
@@ -24,7 +24,32 @@ void SimulationNBodyOptim1::initIteration()
     }
 }
 
-void SimulationNBodyOptim1::computeBodiesAcceleration()
+// Based on this article: https://martin.ankerl.com/2012/01/25/optimized-approximative-pow-in-c-and-cpp/
+inline double fastPrecisePow(double a, double b) {
+  // calculate approximation with fraction of the exponent
+  int e = (int) b;
+  union {
+    double d;
+    int x[2];
+  } u = { a };
+  u.x[1] = (int)((b - e) * (u.x[1] - 1072632447) + 1072632447);
+  u.x[0] = 0;
+
+  // exponentiation by squaring with the exponent's integer part
+  // double r = u.d makes everything much slower, not sure why
+  double r = 1.0;
+  while (e) {
+    if (e & 1) {
+      r *= a;
+    }
+    a *= a;
+    e >>= 1;
+  }
+
+  return r * u.d;
+}
+
+void SimulationNBodyOptim1Approx::computeBodiesAcceleration()
 {
     const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
     // compute e²
@@ -42,7 +67,7 @@ void SimulationNBodyOptim1::computeBodiesAcceleration()
             const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz; // 5 flops
 
             // compute the distance between the bodies: (|| rij ||² + e²)^{3/2}            
-            float distance = std::pow(rijSquared + softSquared, 3.f / 2.f); // 2 flops
+            float distance = fastPrecisePow(rijSquared + softSquared, 3.f / 2.f); // 2 flops
             // compute the acceleration value between body i and body j: || ai || = G.mj / distance
             const float ai = this->G * d[jBody].m / distance; // 3 flops
             // compute the acceleration value between body i and body j: || aj || = G.mj / distance
@@ -60,7 +85,7 @@ void SimulationNBodyOptim1::computeBodiesAcceleration()
     }
 }
 
-void SimulationNBodyOptim1::computeOneIteration()
+void SimulationNBodyOptim1Approx::computeOneIteration()
 {
     this->initIteration();
     this->computeBodiesAcceleration();
