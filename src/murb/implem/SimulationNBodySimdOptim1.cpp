@@ -3,10 +3,10 @@
 #include <cmath>
 #include <string>
 
-#include "SimulationNBodySimd.hpp"
+#include "SimulationNBodySimdOptim1.hpp"
 
-SimulationNBodySimd::SimulationNBodySimd(const unsigned long nBodies, const std::string &scheme, const float soft,
-                                         const unsigned long randInit)
+SimulationNBodySimdOptim1::SimulationNBodySimdOptim1(const unsigned long nBodies, const std::string &scheme,
+                                                     const float soft, const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
     this->flopsPerIte = 23.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
@@ -15,7 +15,7 @@ SimulationNBodySimd::SimulationNBodySimd(const unsigned long nBodies, const std:
     this->accelerations.az.resize(this->getBodies().getN());
 }
 
-void SimulationNBodySimd::initIteration()
+void SimulationNBodySimdOptim1::initIteration()
 {
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
         this->accelerations.ax[iBody] = 0.f;
@@ -24,13 +24,13 @@ void SimulationNBodySimd::initIteration()
     }
 }
 
-void SimulationNBodySimd::computeBodiesAcceleration()
+void SimulationNBodySimdOptim1::computeBodiesAcceleration()
 {
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
     mipp::Reg<float> r_qx_j, r_qy_j, r_qz_j, r_m_j;
     mipp::Reg<float> r_rijx, r_rijy, r_rijz, r_rijSquared;
     mipp::Reg<float> r_softFactor, r_ai;
-    mipp::Reg<float> r_acc_x, r_acc_y, r_acc_z;
+    mipp::Reg<float> r_ax, r_ay, r_az, r_acc_x, r_acc_y, r_acc_z;
     // compute e²
     const float softSquared = std::pow(this->soft, 2);        // 1 flops
     mipp::Reg<float> r_softSquared = mipp::set1(softSquared); // 1 flops
@@ -63,19 +63,13 @@ void SimulationNBodySimd::computeBodiesAcceleration()
             // compute the || rij ||² distance between body i and body j
             r_rijSquared = r_rijx * r_rijx + r_rijy * r_rijy + r_rijz * r_rijz; // 5 flops
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-            r_softFactor = (r_rijSquared + r_softSquared) * mipp::sqrt(r_rijSquared + r_softSquared); // 3 flops
+            r_softFactor = mipp::sqrt(r_rijSquared + r_softSquared) * (r_rijSquared + r_softSquared); // 3 flops
             r_ai = (r_m_j * this->G) / r_softFactor;                                                  // 3 flops
 
-            r_acc_x = r_ai * r_rijx;
-            r_acc_y = r_ai * r_rijy;
-            r_acc_z = r_ai * r_rijz;
-
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            for (int i = 0; i < mipp::N<float>(); i++) {
-                ax += r_acc_x[i]; // 3 flops
-                ay += r_acc_y[i]; // 3 flops
-                az += r_acc_z[i]; // 3 flops
-            }
+            ax += mipp::sum(r_ai * r_rijx); // 3
+            ay += mipp::sum(r_ai * r_rijy); // 3
+            az += mipp::sum(r_ai * r_rijz); // 3
         }
 
         // remaining, elements in the j-array don't fit in a simd register
@@ -104,7 +98,7 @@ void SimulationNBodySimd::computeBodiesAcceleration()
     }
 }
 
-void SimulationNBodySimd::computeOneIteration()
+void SimulationNBodySimdOptim1::computeOneIteration()
 {
     this->initIteration();
     this->computeBodiesAcceleration();
