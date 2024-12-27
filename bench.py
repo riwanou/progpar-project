@@ -9,6 +9,8 @@ benches = [
     {"variant": "cpu+naive", "bodies": 1000, "iterations": 10},
     {"variant": "cpu+optim1", "bodies": 1000, "iterations": 10},
     {"variant": "cpu+optim1_approx", "bodies": 1000, "iterations": 100},
+    {"variant": "simd+naive", "bodies": 1000, "iterations": 200},
+    {"variant": "simd+optim1", "bodies": 1000, "iterations": 1000},
 ]
 
 passes = 10
@@ -91,6 +93,8 @@ def plot_benches():
     fps_data = data[["fps", "std_fps"]]
     fps_data.loc[:, ["variant"]] = [bench["variant"] for bench in benches]
 
+    plt.figure(figsize=(12, 8))
+
     plt.rc("axes", axisbelow=True)
     plt.grid(linestyle="dashed")
 
@@ -107,6 +111,6 @@ def plot_benches():
     plt.close()
 
 
-init_data_output()
-run_benches()
+# init_data_output()
+# run_benches()
 plot_benches()

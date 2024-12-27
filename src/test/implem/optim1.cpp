@@ -1,9 +1,4 @@
-#include <algorithm>
 #include <catch.hpp>
-#include <cmath>
-#include <exception>
-#include <numeric>
-#include <random>
 #include <string>
 
 #include "SimulationNBodyNaive.hpp"
