@@ -1,5 +1,5 @@
-#ifndef SIMULATION_N_BODY_NAIVE_APPROX_HPP_
-#define SIMULATION_N_BODY_NAIVE_APPROX_HPP_
+#ifndef SIMULATION_N_BODY_NAIVE_OPTIM1_APPROX_HPP_
+#define SIMULATION_N_BODY_NAIVE_OPTIM1_APPROX_HPP_
 
 #include <string>
 
@@ -20,4 +20,4 @@ class SimulationNBodyOptim1Approx : public SimulationNBodyInterface {
     void computeBodiesAcceleration();
 };
 
-#endif /* SIMULATION_N_BODY_NAIVE_APPROX_HPP_ */
+#endif /* SIMULATION_N_BODY_NAIVE_OPTIM1_APPROX_HPP_ */
