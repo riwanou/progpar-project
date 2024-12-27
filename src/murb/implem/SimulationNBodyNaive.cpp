@@ -1,8 +1,4 @@
-#include <cassert>
 #include <cmath>
-#include <fstream>
-#include <iostream>
-#include <limits>
 #include <string>
 
 #include "SimulationNBodyNaive.hpp"

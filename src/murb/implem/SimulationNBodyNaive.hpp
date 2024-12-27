@@ -1,5 +1,5 @@
-#ifndef SIMULATION_N_BODY_ARRAY_HPP_
-#define SIMULATION_N_BODY_ARRAY_HPP_
+#ifndef SIMULATION_N_BODY_NAIVE_HPP_
+#define SIMULATION_N_BODY_NAIVE_HPP_
 
 #include <string>
 
@@ -20,4 +20,4 @@ class SimulationNBodyNaive : public SimulationNBodyInterface {
     void computeBodiesAcceleration();
 };
 
-#endif /* SIMULATION_N_BODY_ARRAY_HPP_ */
+#endif /* SIMULATION_N_BODY_NAIVE_HPP_ */
