@@ -9,8 +9,8 @@ benches = [
     {"variant": "cpu+naive", "bodies": 1000, "iterations": 10},
     {"variant": "cpu+optim1", "bodies": 1000, "iterations": 10},
     {"variant": "cpu+optim1_approx", "bodies": 1000, "iterations": 100},
-    {"variant": "simd+naive", "bodies": 1000, "iterations": 200},
-    {"variant": "simd+optim1", "bodies": 1000, "iterations": 1000},
+    {"variant": "simd+naive", "bodies": 1000, "iterations": 500},
+    {"variant": "simd+optim1", "bodies": 1000, "iterations": 500},
 ]
 
 passes = 10
@@ -111,6 +111,6 @@ def plot_benches():
     plt.close()
 
 
-# init_data_output()
-# run_benches()
+init_data_output()
+run_benches()
 plot_benches()

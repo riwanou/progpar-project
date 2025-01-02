@@ -19,31 +19,6 @@ void SimulationNBodyOptim1Approx::initIteration()
     }
 }
 
-// Based on this article: https://martin.ankerl.com/2012/01/25/optimized-approximative-pow-in-c-and-cpp/
-inline double fastPrecisePow(double a, double b) {
-  // calculate approximation with fraction of the exponent
-  int e = (int) b;
-  union {
-    double d;
-    int x[2];
-  } u = { a };
-  u.x[1] = (int)((b - e) * (u.x[1] - 1072632447) + 1072632447);
-  u.x[0] = 0;
-
-  // exponentiation by squaring with the exponent's integer part
-  // double r = u.d makes everything much slower, not sure why
-  double r = 1.0;
-  while (e) {
-    if (e & 1) {
-      r *= a;
-    }
-    a *= a;
-    e >>= 1;
-  }
-
-  return r * u.d;
-}
-
 void SimulationNBodyOptim1Approx::computeBodiesAcceleration()
 {
     const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
@@ -58,15 +33,15 @@ void SimulationNBodyOptim1Approx::computeBodiesAcceleration()
             const float rijy = d[jBody].qy - d[iBody].qy; // 1 flop
             const float rijz = d[jBody].qz - d[iBody].qz; // 1 flop
 
-            // compute the || rij ||² distance between body i and body j
-            const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz; // 5 flops
-
-            // compute the distance between the bodies: (|| rij ||² + e²)^{3/2}            
-            float distance = fastPrecisePow(rijSquared + softSquared, 3.f / 2.f); // 2 flops
+            // compute the || rij ||² + e² distance between body i and body j
+            const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared; // 5 flops
+            // compute the inverse distance between the bodies: 1 / (|| rij ||² + e²)^{3/2}            
+            float rsqrt = 1 / sqrt(rijSquared);
+            float rsqrt3 = rsqrt * rsqrt * rsqrt;
             // compute the acceleration value between body i and body j: || ai || = G.mj / distance
-            const float ai = this->G * d[jBody].m / distance; // 3 flops
+            const float ai = this->G * d[jBody].m * rsqrt3; // 3 flops
             // compute the acceleration value between body i and body j: || aj || = G.mj / distance
-            const float aj = this->G * d[iBody].m / distance; // 3 flops
+            const float aj = this->G * d[iBody].m * rsqrt3; // 3 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
             this->accelerations[iBody].ax += ai * rijx; // 2 flops
