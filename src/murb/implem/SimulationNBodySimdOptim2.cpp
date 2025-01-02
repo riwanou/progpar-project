@@ -63,15 +63,20 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
         // simd
         // flops = n * 23
         for (unsigned long jBody = 0; jBody < this->getBodies().getN(); jBody += 1) {
-            r_qx_j = packed_bodies[jBody].qx;
-            r_qy_j = packed_bodies[jBody].qy;
-            r_qz_j = packed_bodies[jBody].qz;
-            r_m_j = packed_bodies[jBody].m;
-            // r_packed_j.load((const float *)(&this->packed_bodies[jBody]));
-            // r_qx_j = r_packed_j.get(0);
-            // r_qy_j = r_packed_j.get(1);
-            // r_qz_j = r_packed_j.get(2);
-            // r_m_j = r_packed_j.get(3);
+            // TODO: maybe we could create some variants from these to compare packed data, packed data simd, and non-packed data
+            // r_qx_j = this->getBodies().getDataAoS()[jBody].qx;
+            // r_qy_j = this->getBodies().getDataAoS()[jBody].qy;
+            // r_qz_j = this->getBodies().getDataAoS()[jBody].qz;
+            // r_m_j = this->getBodies().getDataAoS()[jBody].m;
+            // r_qx_j = packed_bodies[jBody].qx;
+            // r_qy_j = packed_bodies[jBody].qy;
+            // r_qz_j = packed_bodies[jBody].qz;
+            // r_m_j = packed_bodies[jBody].m;
+            r_packed_j.load((const float *)(&this->packed_bodies[jBody]));
+            r_qx_j = r_packed_j.get(0);
+            r_qy_j = r_packed_j.get(1);
+            r_qz_j = r_packed_j.get(2);
+            r_m_j = r_packed_j.get(3);
 
             r_rijx = r_qx_j - r_qx_i; // 1 flop
             r_rijy = r_qy_j - r_qy_i; // 1 flop
