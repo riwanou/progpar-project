@@ -9,7 +9,7 @@ SimulationNBodySimdOptim2::SimulationNBodySimdOptim2(const unsigned long nBodies
                                                      const float soft, const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 23.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
+    this->flopsPerIte = 20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
@@ -50,7 +50,7 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
     size_t simd_loop_size = (this->getBodies().getN() / mipp::N<float>()) * mipp::N<float>();
 
     // remaining
-    // flops = n² * 23
+    // flops = n² * 20
     for (unsigned long iBody = 0; iBody < simd_loop_size; iBody += mipp::N<float>()) {
         r_qx_i.load(&d.qx[iBody]);
         r_qy_i.load(&d.qy[iBody]);
@@ -85,9 +85,9 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
             r_ai = (r_m_j * this->G) * (r_rsqrt * r_rsqrt * r_rsqrt); // 4 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            r_ax += r_ai * r_rijx;
-            r_ay += r_ai * r_rijy;
-            r_az += r_ai * r_rijz;
+            r_ax += r_ai * r_rijx; // 2 flops
+            r_ay += r_ai * r_rijy; // 2 flops
+            r_az += r_ai * r_rijz; // 2 flops
         }
 
         // store
