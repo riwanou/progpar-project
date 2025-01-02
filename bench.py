@@ -5,13 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 
+nb_bodies = 1000
+
 benches = [
-    {"variant": "cpu+naive", "bodies": 1000, "iterations": 10},
-    {"variant": "cpu+optim1", "bodies": 1000, "iterations": 10},
-    {"variant": "cpu+optim1_approx", "bodies": 1000, "iterations": 100},
-    {"variant": "simd+naive", "bodies": 1000, "iterations": 500},
-    {"variant": "simd+optim1", "bodies": 1000, "iterations": 500},
-    {"variant": "simd+optim2", "bodies": 1000, "iterations": 500},
+    {"variant": "cpu+naive", "bodies": nb_bodies, "iterations": 10},
+    {"variant": "cpu+optim1", "bodies": nb_bodies, "iterations": 10},
+    {"variant": "cpu+optim1_approx", "bodies": nb_bodies, "iterations": 200},
+    {"variant": "simd+naive", "bodies": nb_bodies, "iterations": 1000},
+    {"variant": "simd+optim1", "bodies": nb_bodies, "iterations": 2000},
+    {"variant": "simd+optim2", "bodies": nb_bodies, "iterations": 4000},
 ]
 
 passes = 10
@@ -105,7 +107,7 @@ def plot_benches():
         yerr=fps_data["std_fps"],
         capsize=4,
     )
-    plt.xlabel("Simulation optimization variants")
+    plt.xlabel(f"Simulation optimization variants ({nb_bodies} bodies)")
     plt.ylabel("Frame rate (FPS)")
 
     plt.savefig(graph_output, dpi=400)
