@@ -36,8 +36,8 @@ void SimulationNBodyOptim1Approx::computeBodiesAcceleration()
             // compute the || rij ||² + e² distance between body i and body j
             const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared; // 6 flops
             // compute the inverse distance between the bodies: 1 / (|| rij ||² + e²)^{3/2}            
-            float rsqrt = 1 / sqrt(rijSquared); // 2 flops
-            float rsqrt3 = rsqrt * rsqrt * rsqrt; // 2 flops
+            const float rsqrt = 1 / sqrt(rijSquared); // 2 flops
+            const float rsqrt3 = rsqrt * rsqrt * rsqrt; // 2 flops
             // compute the acceleration value between body i and body j: || ai || = G.mj / distance
             const float ai = this->G * d[jBody].m * rsqrt3; // 2 flops
             // compute the acceleration value between body i and body j: || aj || = G.mj / distance
