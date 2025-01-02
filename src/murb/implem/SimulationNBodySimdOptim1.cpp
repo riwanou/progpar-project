@@ -29,7 +29,7 @@ void SimulationNBodySimdOptim1::computeBodiesAcceleration()
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
     mipp::Reg<float> r_qx_j, r_qy_j, r_qz_j, r_m_j;
     mipp::Reg<float> r_rijx, r_rijy, r_rijz, r_rijSquared;
-    mipp::Reg<float> r_softFactor, r_ai;
+    mipp::Reg<float> r_rsqrt, r_softFactor, r_ai;
     mipp::Reg<float> r_ax, r_ay, r_az, r_acc_x, r_acc_y, r_acc_z;
     // compute e²
     const float softSquared = std::pow(this->soft, 2);        // 1 flops
@@ -60,11 +60,12 @@ void SimulationNBodySimdOptim1::computeBodiesAcceleration()
             r_rijy = r_qy_j - qy_i; // 1 flop
             r_rijz = r_qz_j - qz_i; // 1 flop
 
-            // compute the || rij ||² distance between body i and body j
-            r_rijSquared = r_rijx * r_rijx + r_rijy * r_rijy + r_rijz * r_rijz; // 5 flops
+            // compute the || rij ||² + e² distance between body i and body j
+            r_rijSquared = (r_rijx * r_rijx + r_rijy * r_rijy + r_rijz * r_rijz) + r_softSquared; // 6 flops
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-            r_softFactor = mipp::sqrt(r_rijSquared + r_softSquared) * (r_rijSquared + r_softSquared); // 3 flops
-            r_ai = (r_m_j * this->G) / r_softFactor;                                                  // 3 flops
+            // a / b^(3/2) equivalent to: a * (1 / sqrt(b) * (1 / sqrt(b)) * (1 / sqrt(b))
+            r_rsqrt = mipp::rsqrt(r_rijSquared); // 1 flop
+            r_ai = (r_m_j * this->G) * (r_rsqrt * r_rsqrt * r_rsqrt); // 4 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
             ax += mipp::sum(r_ai * r_rijx); // 3

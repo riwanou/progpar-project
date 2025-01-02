@@ -44,9 +44,6 @@ void SimulationNBodySimd::computeBodiesAcceleration()
         float qx_i = d.qx[iBody];
         float qy_i = d.qy[iBody];
         float qz_i = d.qz[iBody];
-        float ax = this->accelerations.ax[iBody];
-        float ay = this->accelerations.ay[iBody];
-        float az = this->accelerations.az[iBody];
 
         // simd
         // flops = n * 23
@@ -71,11 +68,9 @@ void SimulationNBodySimd::computeBodiesAcceleration()
             r_acc_z = r_ai * r_rijz;
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            for (int i = 0; i < mipp::N<float>(); i++) {
-                ax += r_acc_x[i]; // 3 flops
-                ay += r_acc_y[i]; // 3 flops
-                az += r_acc_z[i]; // 3 flops
-            }
+            this->accelerations.ax[iBody] += mipp::sum(r_ai * r_rijx); // 3
+            this->accelerations.ay[iBody] += mipp::sum(r_ai * r_rijy); // 3
+            this->accelerations.az[iBody] += mipp::sum(r_ai * r_rijz); // 3
         }
 
         // remaining, elements in the j-array don't fit in a simd register
@@ -92,15 +87,10 @@ void SimulationNBodySimd::computeBodiesAcceleration()
             const float ai = this->G * d.m[jBody] / softFactor;                                   // 3 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            ax += ai * rijx; // 2 flops
-            ay += ai * rijy; // 2 flops
-            az += ai * rijz; // 2 flops
+            this->accelerations.ax[iBody] += ai * rijx; // 2 flops
+            this->accelerations.ay[iBody] += ai * rijy; // 2 flops
+            this->accelerations.az[iBody] += ai * rijz; // 2 flops
         }
-
-        // store
-        this->accelerations.ax[iBody] = ax;
-        this->accelerations.ay[iBody] = ay;
-        this->accelerations.az[iBody] = az;
     }
 }
 
