@@ -11,6 +11,7 @@ benches = [
     {"variant": "cpu+optim1_approx", "bodies": 1000, "iterations": 100},
     {"variant": "simd+naive", "bodies": 1000, "iterations": 500},
     {"variant": "simd+optim1", "bodies": 1000, "iterations": 500},
+    {"variant": "simd+optim2", "bodies": 1000, "iterations": 500},
 ]
 
 passes = 10
