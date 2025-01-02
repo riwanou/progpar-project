@@ -6,7 +6,7 @@ SimulationNBodyOptim1Approx::SimulationNBodyOptim1Approx(const unsigned long nBo
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 27.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
+    this->flopsPerIte = 29.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
     this->accelerations.resize(this->getBodies().getN());
 }
 
@@ -34,14 +34,14 @@ void SimulationNBodyOptim1Approx::computeBodiesAcceleration()
             const float rijz = d[jBody].qz - d[iBody].qz; // 1 flop
 
             // compute the || rij ||² + e² distance between body i and body j
-            const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared; // 5 flops
+            const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared; // 6 flops
             // compute the inverse distance between the bodies: 1 / (|| rij ||² + e²)^{3/2}            
-            float rsqrt = 1 / sqrt(rijSquared);
-            float rsqrt3 = rsqrt * rsqrt * rsqrt;
+            float rsqrt = 1 / sqrt(rijSquared); // 2 flops
+            float rsqrt3 = rsqrt * rsqrt * rsqrt; // 2 flops
             // compute the acceleration value between body i and body j: || ai || = G.mj / distance
-            const float ai = this->G * d[jBody].m * rsqrt3; // 3 flops
+            const float ai = this->G * d[jBody].m * rsqrt3; // 2 flops
             // compute the acceleration value between body i and body j: || aj || = G.mj / distance
-            const float aj = this->G * d[iBody].m * rsqrt3; // 3 flops
+            const float aj = this->G * d[iBody].m * rsqrt3; // 2 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
             this->accelerations[iBody].ax += ai * rijx; // 2 flops
