@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "implem/SimulationNBodySimd.hpp"
-#include "implem/SimulationNBodySimdOptim1.hpp"
 #include "ogl/SpheresVisu.hpp"
 #include "ogl/SpheresVisuNo.hpp"
 #ifdef VISU
@@ -21,6 +19,10 @@
 #include "implem/SimulationNBodyNaive.hpp"
 #include "implem/SimulationNBodyOptim1.hpp"
 #include "implem/SimulationNBodyOptim1Approx.hpp"
+
+#include "implem/SimulationNBodySimd.hpp"
+#include "implem/SimulationNBodySimdOptim1.hpp"
+#include "implem/SimulationNBodySimdOptim2.hpp"
 
 /* global variables */
 unsigned long NBodies;               /*!< Number of bodies. */
@@ -81,6 +83,7 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"cpu+optim1_approx\"\n"
                      "\t\t\t - \"simd+naive\"\n"
                      "\t\t\t - \"simd+optim1\"\n"
+                     "\t\t\t - \"simd+optim2\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
     docArgs["-soft"] = "softening factor.";
@@ -201,6 +204,9 @@ SimulationNBodyInterface *createImplem()
     }
     else if(ImplTag == "simd+optim1") {
         simu = new SimulationNBodySimdOptim1(NBodies, BodiesScheme, Softening);
+    }
+    else if(ImplTag == "simd+optim2") {
+        simu = new SimulationNBodySimdOptim2(NBodies, BodiesScheme, Softening);
     }
     else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
