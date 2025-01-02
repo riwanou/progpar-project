@@ -63,11 +63,15 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
         // simd
         // flops = n * 23
         for (unsigned long jBody = 0; jBody < this->getBodies().getN(); jBody += 1) {
-            r_packed_j.load((const float *)(&this->packed_bodies[jBody]));
-            r_qx_j = r_packed_j.get(0);
-            r_qy_j = r_packed_j.get(1);
-            r_qz_j = r_packed_j.get(2);
-            r_m_j = r_packed_j.get(3);
+            r_qx_j = packed_bodies[jBody].qx;
+            r_qy_j = packed_bodies[jBody].qy;
+            r_qz_j = packed_bodies[jBody].qz;
+            r_m_j = packed_bodies[jBody].m;
+            // r_packed_j.load((const float *)(&this->packed_bodies[jBody]));
+            // r_qx_j = r_packed_j.get(0);
+            // r_qy_j = r_packed_j.get(1);
+            // r_qz_j = r_packed_j.get(2);
+            // r_m_j = r_packed_j.get(3);
 
             r_rijx = r_qx_j - r_qx_i; // 1 flop
             r_rijy = r_qy_j - r_qy_i; // 1 flop
@@ -93,65 +97,33 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
     }
 
     // remaining
-    // flops = n² * 23
+    // flops = n² * 20
     for (unsigned long iBody = simd_loop_size; iBody < this->getBodies().getN(); iBody++) {
-        float qx_i = d.qx[iBody];
-        float qy_i = d.qy[iBody];
-        float qz_i = d.qz[iBody];
-        float ax = this->accelerations.ax[iBody];
-        float ay = this->accelerations.ay[iBody];
-        float az = this->accelerations.az[iBody];
-
-        // simd
-        // flops = n * 23
-        for (unsigned long jBody = 0; jBody < simd_loop_size; jBody += mipp::N<float>()) {
-            r_qx_j.load(&d.qx[jBody]);
-            r_qy_j.load(&d.qy[jBody]);
-            r_qz_j.load(&d.qz[jBody]);
-            r_m_j.load(&d.m[jBody]);
-
-            r_rijx = r_qx_j - qx_i; // 1 flop
-            r_rijy = r_qy_j - qy_i; // 1 flop
-            r_rijz = r_qz_j - qz_i; // 1 flop
+        // flops = n * 20
+        for (unsigned long jBody = iBody + 1; jBody < this->getBodies().getN(); jBody++) {
+            const float rijx = d.qx[jBody] - d.qx[iBody]; // 1 flop
+            const float rijy = d.qy[jBody] - d.qy[iBody]; // 1 flop
+            const float rijz = d.qz[jBody] - d.qz[iBody]; // 1 flop
 
             // compute the || rij ||² + e² distance between body i and body j
-            r_rijSquared = (r_rijx * r_rijx + r_rijy * r_rijy + r_rijz * r_rijz) + r_softSquared; // 6 flops
-            // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-            // a / b^(3/2) equivalent to: a * (1 / sqrt(b) * (1 / sqrt(b)) * (1 / sqrt(b))
-            r_rsqrt = mipp::rsqrt(r_rijSquared);                      // 1 flop
-            r_ai = (r_m_j * this->G) * (r_rsqrt * r_rsqrt * r_rsqrt); // 4 flops
-
-            // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            ax += mipp::sum(r_ai * r_rijx); // 3
-            ay += mipp::sum(r_ai * r_rijy); // 3
-            az += mipp::sum(r_ai * r_rijz); // 3
-        }
-
-        // remaining, elements in the j-array don't fit in a simd register
-        // flops = (remaining n) * 21
-        for (unsigned long jBody = simd_loop_size; jBody < this->getBodies().getN(); jBody++) {
-            const float rijx = d.qx[jBody] - qx_i; // 1 flop
-            const float rijy = d.qy[jBody] - qy_i; // 1 flop
-            const float rijz = d.qz[jBody] - qz_i; // 1 flop
-
-            // compute the || rij ||² distance between body i and body j
             const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared; // 6 flops
             // compute the inverse distance between the bodies: 1 / (|| rij ||² + e²)^{3/2}
             const float rsqrt = 1 / sqrt(rijSquared);   // 2 flops
             const float rsqrt3 = rsqrt * rsqrt * rsqrt; // 2 flops
             // compute the acceleration value between body i and body j: || ai || = G.mj / distance
             const float ai = this->G * d.m[jBody] * rsqrt3; // 2 flops
+            // compute the acceleration value between body i and body j: || aj || = G.mj / distance
+            const float aj = this->G * d.m[iBody] * rsqrt3; // 2 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            ax += ai * rijx; // 2 flops
-            ay += ai * rijy; // 2 flops
-            az += ai * rijz; // 2 flops
+            this->accelerations.ax[iBody] += ai * rijx; // 2 flops
+            this->accelerations.ay[iBody] += ai * rijy; // 2 flops
+            this->accelerations.az[iBody] += ai * rijz; // 2 flops
+            // add the acceleration value into the acceleration vector: aj += || aj ||-.rij
+            this->accelerations.ax[jBody] += aj * -rijx; // 2 flops
+            this->accelerations.ay[jBody] += aj * -rijy; // 2 flops
+            this->accelerations.az[jBody] += aj * -rijz; // 2 flops
         }
-
-        // store
-        this->accelerations.ax[iBody] = ax;
-        this->accelerations.ay[iBody] = ay;
-        this->accelerations.az[iBody] = az;
     }
 }
 
