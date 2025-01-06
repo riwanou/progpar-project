@@ -9,7 +9,7 @@ SimulationNBodySimd::SimulationNBodySimd(const unsigned long nBodies, const std:
                                          const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 23.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
+    this->flopsPerIte = (20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN()) + (9.0f * (float)this->getBodies().getN());
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
@@ -30,7 +30,7 @@ void SimulationNBodySimd::computeBodiesAcceleration()
     mipp::Reg<float> r_qx_j, r_qy_j, r_qz_j, r_m_j;
     mipp::Reg<float> r_rijx, r_rijy, r_rijz, r_rijSquared;
     mipp::Reg<float> r_softFactor, r_ai;
-    mipp::Reg<float> r_acc_x, r_acc_y, r_acc_z;
+    mipp::Reg<float> r_ax, r_ay, r_az;
     // compute e²
     const float softSquared = std::pow(this->soft, 2);        // 1 flops
     mipp::Reg<float> r_softSquared = mipp::set1(softSquared); // 1 flops
@@ -39,14 +39,18 @@ void SimulationNBodySimd::computeBodiesAcceleration()
     size_t simd_loop_size = (this->getBodies().getN() / mipp::N<float>()) * mipp::N<float>();
 
     // simd
-    // flops = n² * 23
+    // flops = n² * 20 + n * 9
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
         float qx_i = d.qx[iBody];
         float qy_i = d.qy[iBody];
         float qz_i = d.qz[iBody];
 
+        r_ax = 0.f;
+        r_ay = 0.f;
+        r_az = 0.f;
+
         // simd
-        // flops = n * 23
+        // flops = n * 20
         for (unsigned long jBody = 0; jBody < simd_loop_size; jBody += mipp::N<float>()) {
             r_qx_j.load(&d.qx[jBody]);
             r_qy_j.load(&d.qy[jBody]);
@@ -60,21 +64,20 @@ void SimulationNBodySimd::computeBodiesAcceleration()
             // compute the || rij ||² distance between body i and body j
             r_rijSquared = r_rijx * r_rijx + r_rijy * r_rijy + r_rijz * r_rijz; // 5 flops
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-            r_softFactor = (r_rijSquared + r_softSquared) * mipp::sqrt(r_rijSquared + r_softSquared); // 3 flops
-            r_ai = (r_m_j * this->G) / r_softFactor;                                                  // 3 flops
-
-            r_acc_x = r_ai * r_rijx;
-            r_acc_y = r_ai * r_rijy;
-            r_acc_z = r_ai * r_rijz;
+            r_softFactor = (r_rijSquared + r_softSquared) * mipp::sqrt(r_rijSquared + r_softSquared); // 4 flops
+            r_ai = (r_m_j * this->G) / r_softFactor; // 2 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            this->accelerations.ax[iBody] += mipp::sum(r_ai * r_rijx); // 3
-            this->accelerations.ay[iBody] += mipp::sum(r_ai * r_rijy); // 3
-            this->accelerations.az[iBody] += mipp::sum(r_ai * r_rijz); // 3
+            r_ax += r_ai * r_rijx; // 2 flops
+            r_ay += r_ai * r_rijy; // 2 flops
+            r_az += r_ai * r_rijz; // 2 flops
         }
 
+        this->accelerations.ax[iBody] += mipp::sum(r_ax); // 3 flops
+        this->accelerations.ay[iBody] += mipp::sum(r_ay); // 3 flops
+        this->accelerations.az[iBody] += mipp::sum(r_az); // 3 flops
+
         // remaining, elements in the j-array don't fit in a simd register
-        // flops = (remaining n) * 20
         for (unsigned long jBody = simd_loop_size; jBody < this->getBodies().getN(); jBody++) {
             const float rijx = d.qx[jBody] - qx_i; // 1 flop
             const float rijy = d.qy[jBody] - qy_i; // 1 flop

@@ -1,4 +1,5 @@
 #include <string>
+#include <cmath>
 
 #include "SimulationNBodyOptim1Approx.hpp"
 
