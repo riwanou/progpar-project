@@ -21,7 +21,7 @@
 #include "implem/SimulationNBodyNaive.hpp"
 #include "implem/SimulationNBodyOptim1.hpp"
 #include "implem/SimulationNBodyOptim1Approx.hpp"
-#include "implem/SimulationNBodyOCL.hpp"
+#include "implem/SimulationNBodyOCLNaive.hpp"
 
 
 /* global variables */
@@ -206,7 +206,7 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodySimdOptim1(NBodies, BodiesScheme, Softening);
     }
     else if(ImplTag == "gpu+naive") {
-        simu = new SimulationNBodyOCL(NBodies, BodiesScheme, Softening);
+        simu = new SimulationNBodyOCLNaive(NBodies, BodiesScheme, Softening);
     }
     else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;

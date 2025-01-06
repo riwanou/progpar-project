@@ -7,7 +7,7 @@
 #include <string>
 
 #include "SimulationNBodyNaive.hpp"
-#include "SimulationNBodyOCL.hpp"
+#include "SimulationNBodyOCLNaive.hpp"
 
 void test_nbody_OCL(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
                      const float eps)
@@ -15,7 +15,7 @@ void test_nbody_OCL(const size_t n, const float soft, const float dt, const size
     SimulationNBodyNaive simuRef(n, scheme, soft);
     simuRef.setDt(dt);
 
-    SimulationNBodyOCL simuTest(n, scheme, soft);
+    SimulationNBodyOCLNaive simuTest(n, scheme, soft);
     simuTest.setDt(dt);
 
     const float *xRef = simuRef.getBodies().getDataSoA().qx.data();
