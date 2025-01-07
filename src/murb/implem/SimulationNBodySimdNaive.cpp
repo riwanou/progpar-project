@@ -3,9 +3,9 @@
 #include <cmath>
 #include <string>
 
-#include "SimulationNBodySimd.hpp"
+#include "SimulationNBodySimdNaive.hpp"
 
-SimulationNBodySimd::SimulationNBodySimd(const unsigned long nBodies, const std::string &scheme, const float soft,
+SimulationNBodySimdNaive::SimulationNBodySimdNaive(const unsigned long nBodies, const std::string &scheme, const float soft,
                                          const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
@@ -15,7 +15,7 @@ SimulationNBodySimd::SimulationNBodySimd(const unsigned long nBodies, const std:
     this->accelerations.az.resize(this->getBodies().getN());
 }
 
-void SimulationNBodySimd::initIteration()
+void SimulationNBodySimdNaive::initIteration()
 {
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
         this->accelerations.ax[iBody] = 0.f;
@@ -24,7 +24,7 @@ void SimulationNBodySimd::initIteration()
     }
 }
 
-void SimulationNBodySimd::computeBodiesAcceleration()
+void SimulationNBodySimdNaive::computeBodiesAcceleration()
 {
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
     mipp::Reg<float> r_qx_j, r_qy_j, r_qz_j, r_m_j;
@@ -97,7 +97,7 @@ void SimulationNBodySimd::computeBodiesAcceleration()
     }
 }
 
-void SimulationNBodySimd::computeOneIteration()
+void SimulationNBodySimdNaive::computeOneIteration()
 {
     this->initIteration();
     this->computeBodiesAcceleration();

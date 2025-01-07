@@ -6,14 +6,14 @@
 #include "core/Bodies.hpp"
 #include "core/SimulationNBodyInterface.hpp"
 
-class SimulationNBodySimdOMP : public SimulationNBodyInterface {
+class SimulationNBodySimdOMPNaive : public SimulationNBodyInterface {
   protected:
     accSoA_t<float> accelerations; /*!< Array of body acceleration structures. */
 
   public:
-    SimulationNBodySimdOMP(const unsigned long nBodies, const std::string &scheme = "galaxy", const float soft = 0.035f,
+    SimulationNBodySimdOMPNaive(const unsigned long nBodies, const std::string &scheme = "galaxy", const float soft = 0.035f,
                         const unsigned long randInit = 0);
-    virtual ~SimulationNBodySimdOMP() = default;
+    virtual ~SimulationNBodySimdOMPNaive() = default;
     virtual void computeOneIteration();
 
   protected:

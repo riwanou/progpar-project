@@ -20,11 +20,15 @@
 #include "implem/SimulationNBodyOptim1.hpp"
 #include "implem/SimulationNBodyOptim1Approx.hpp"
 
-#include "implem/SimulationNBodySimd.hpp"
+#include "implem/SimulationNBodySimdNaive.hpp"
 #include "implem/SimulationNBodySimdOptim1.hpp"
 #include "implem/SimulationNBodySimdOptim2.hpp"
 
-#include "implem/SimulationNBodySimdOMP.hpp"
+#include "implem/SimulationNBodySimdOMPNaive.hpp"
+
+#include "implem/SimulationNBodyOCLNaive.hpp"
+
+#include "implem/SimulationNBodyCudaNaive.hpp"
 
 
 /* global variables */
@@ -88,6 +92,8 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"simd+optim1\"\n"
                      "\t\t\t - \"simd+optim2\"\n"
                      "\t\t\t - \"simd+omp\"\n"
+                     "\t\t\t - \"ocl+naive\"\n"
+                     "\t\t\t - \"cuda+naive\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
     docArgs["-soft"] = "softening factor.";
@@ -204,7 +210,7 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyOptim1Approx(NBodies, BodiesScheme, Softening);
     }
     else if(ImplTag == "simd+naive") {
-        simu = new SimulationNBodySimd(NBodies, BodiesScheme, Softening);
+        simu = new SimulationNBodySimdNaive(NBodies, BodiesScheme, Softening);
     }
     else if(ImplTag == "simd+optim1") {
         simu = new SimulationNBodySimdOptim1(NBodies, BodiesScheme, Softening);
@@ -212,9 +218,16 @@ SimulationNBodyInterface *createImplem()
     else if(ImplTag == "simd+optim2") {
         simu = new SimulationNBodySimdOptim2(NBodies, BodiesScheme, Softening);
     }
-	else if(ImplTag == "simd+omp") {
-        simu = new SimulationNBodySimdOMP(NBodies, BodiesScheme, Softening);
+    else if(ImplTag == "simd+omp") {
+        simu = new SimulationNBodySimdOMPNaive(NBodies, BodiesScheme, Softening);
     }
+    else if(ImplTag == "ocl+naive") {
+        simu = new SimulationNBodyOCLNaive(NBodies, BodiesScheme, Softening);
+    }
+	else if(ImplTag == "cuda+naive") {
+        simu = new SimulationNBodyCudaNaive(NBodies, BodiesScheme, Softening);
+    }
+
     else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
         exit(-1);
