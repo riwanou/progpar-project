@@ -65,7 +65,7 @@ void SimulationNBodySimdOptim1::computeBodiesAcceleration()
             r_rijSquared = (r_rijx * r_rijx + r_rijy * r_rijy + r_rijz * r_rijz) + r_softSquared; // 6 flops
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
             // a / b^(3/2) equivalent to: a * (1 / sqrt(b) * (1 / sqrt(b)) * (1 / sqrt(b))
-            r_rsqrt = mipp::rsqrt(r_rijSquared);                      // 1 flop
+            r_rsqrt = mipp::rsqrt_prec(r_rijSquared); // 1 flop
             r_ai = (r_m_j * this->G) * (r_rsqrt * r_rsqrt * r_rsqrt); // 4 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
