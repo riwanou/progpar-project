@@ -122,9 +122,9 @@ endmacro()
 targets_include_directories ("${murb_targets_list}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/common")
 
 # MIPP wrapper includes
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/MIPP/src/mipp.h")
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/lib/MIPP/include/mipp.h")
     targets_compile_definitions ("${murb_targets_list}" PRIVATE MIPP_ENABLE_BACKTRACE)
-    targets_include_directories ("${murb_targets_list}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/lib/MIPP/src/")
+    targets_include_directories ("${murb_targets_list}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/lib/MIPP/include/")
     message(STATUS "MIPP found")
 else ()
     message(FATAL_ERROR "MIPP can't be found, try to init the submodules with the following cmd:\n"

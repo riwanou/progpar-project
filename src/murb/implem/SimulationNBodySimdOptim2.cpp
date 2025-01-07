@@ -42,6 +42,7 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
     mipp::Reg<float> r_qx_i, r_qy_i, r_qz_i, r_m_i;
     // AoS access pattern
     mipp::Reg<float> r_packed_j, r_qx_j, r_qy_j, r_qz_j, r_m_j;
+    mipp::Reg<float> r_shuf_x = 0.f, r_shuf_y = 1.f, r_shuf_z = 2.f, r_shuf_m = 3.f;
     // compute e²
     const float softSquared = std::pow(this->soft, 2);        // 1 flops
     mipp::Reg<float> r_softSquared = mipp::set1(softSquared); // 1 flops
@@ -63,11 +64,10 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
         // simd
         // flops = n * 20
         for (unsigned long jBody = 0; jBody < this->getBodies().getN(); jBody += 1) {
-            // TODO: maybe we could create some variants from these to compare packed data, packed data simd, and non-packed data
-            // r_qx_j = this->getBodies().getDataAoS()[jBody].qx;
-            // r_qy_j = this->getBodies().getDataAoS()[jBody].qy;
-            // r_qz_j = this->getBodies().getDataAoS()[jBody].qz;
-            // r_m_j = this->getBodies().getDataAoS()[jBody].m;
+            // TODO: maybe we could create some variants from these to compare packed data, packed data simd, and
+            // non-packed data r_qx_j = this->getBodies().getDataAoS()[jBody].qx; r_qy_j =
+            // this->getBodies().getDataAoS()[jBody].qy; r_qz_j = this->getBodies().getDataAoS()[jBody].qz; r_m_j =
+            // this->getBodies().getDataAoS()[jBody].m;
             r_packed_j.load((const float *)(&this->packed_bodies[jBody]));
             r_qx_j = r_packed_j.get(0);
             r_qy_j = r_packed_j.get(1);
@@ -82,7 +82,7 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
             r_rijSquared = (r_rijx * r_rijx + r_rijy * r_rijy + r_rijz * r_rijz) + r_softSquared; // 6 flops
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
             // a / b^(3/2) equivalent to: a * (1 / sqrt(b) * (1 / sqrt(b)) * (1 / sqrt(b))
-            r_rsqrt = mipp::rsqrt(r_rijSquared);                      // 1 flop
+            r_rsqrt = mipp::rsqrt_prec(r_rijSquared);                      // 1 flop
             r_ai = (r_m_j * this->G) * (r_rsqrt * r_rsqrt * r_rsqrt); // 4 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
