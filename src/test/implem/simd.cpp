@@ -2,7 +2,7 @@
 #include <string>
 
 #include "SimulationNBodyNaive.hpp"
-#include "SimulationNBodySimd.hpp"
+#include "SimulationNBodySimdNaive.hpp"
 
 void test_nbody_simd(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
                      const float eps)
@@ -10,7 +10,7 @@ void test_nbody_simd(const size_t n, const float soft, const float dt, const siz
     SimulationNBodyNaive simuRef(n, scheme, soft);
     simuRef.setDt(dt);
 
-    SimulationNBodySimd simuTest(n, scheme, soft);
+    SimulationNBodySimdNaive simuTest(n, scheme, soft);
     simuTest.setDt(dt);
 
     const float *xRef = simuRef.getBodies().getDataSoA().qx.data();
