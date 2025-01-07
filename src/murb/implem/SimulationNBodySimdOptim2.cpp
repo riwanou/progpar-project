@@ -2,6 +2,7 @@
 #include "mipp.h"
 #include <cmath>
 #include <string>
+#include <array>
 
 #include "SimulationNBodySimdOptim2.hpp"
 
