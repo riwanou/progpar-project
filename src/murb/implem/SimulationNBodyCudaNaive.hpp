@@ -2,6 +2,7 @@
 #define SIMULATION_N_BODY_SIMD_CUDA_NAIVE_HPP_
 
 #include <string>
+
 #include "core/SimulationNBodyInterface.hpp"
 
 class SimulationNBodyCudaNaive : public SimulationNBodyInterface {
