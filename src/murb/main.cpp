@@ -94,6 +94,7 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"simd+omp\"\n"
                      "\t\t\t - \"ocl+naive\"\n"
                      "\t\t\t - \"cuda+naive\"\n"
+                     "\t\t\t - \"cuda+optim1\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
     docArgs["-soft"] = "softening factor.";
@@ -224,8 +225,11 @@ SimulationNBodyInterface *createImplem()
     else if(ImplTag == "ocl+naive") {
         simu = new SimulationNBodyOCLNaive(NBodies, BodiesScheme, Softening);
     }
-	else if(ImplTag == "cuda+naive") {
+    else if(ImplTag == "cuda+naive") {
         simu = new SimulationNBodyCudaNaive(NBodies, BodiesScheme, Softening);
+    }
+    else if(ImplTag == "cuda+optim1") {
+        simu = new SimulationNBodyCudaOptim1(NBodies, BodiesScheme, Softening);
     }
 
     else {

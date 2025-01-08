@@ -2,6 +2,9 @@
 cmake_minimum_required (VERSION 3.10.3)
 
 project (murb CXX)
+cmake_policy(SET CMP0074 NEW)
+set(CMAKE_CXX_FLAGS "-O3 -Wall -funroll-loops -march=native")
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Command line options
 option (ENABLE_MURB      "Enable to compile the MUrB executable"        ON )
