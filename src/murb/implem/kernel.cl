@@ -32,16 +32,16 @@ __kernel void compute_bodies_acceleration(
 	float softSquared = soft * soft; 
 
 	for (int jBody = 0; jBody < get_global_size(0); jBody++) {
-		const float rijx = data[jBody].qx - data[iBody].qx;
-		const float rijy = data[jBody].qy - data[iBody].qy;
-		const float rijz = data[jBody].qz - data[iBody].qz;
+		// const float rijx = data[jBody].qx - data[iBody].qx;
+		// const float rijy = data[jBody].qy - data[iBody].qy;
+		// const float rijz = data[jBody].qz - data[iBody].qz;
 
-		const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared;
-        const float rsqrt = native_rsqrt(rijSquared);
-        const float rsqrt3 = rsqrt * rsqrt * rsqrt;
-		const float ai = G * data[jBody].m * rsqrt3;
+		// const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared;
+        // const float rsqrt = native_rsqrt(rijSquared);
+        // const float rsqrt3 = rsqrt * rsqrt * rsqrt;
+		// const float ai = G * data[jBody].m * rsqrt3;
 
-		ax += ai * rijx;
+		ax += data[jBody].qx;
 		ay += ai * rijy;
 		az += ai * rijz;
 	}

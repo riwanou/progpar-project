@@ -1,14 +1,14 @@
-#ifndef SIMULATION_N_BODY_SIMD_CUDA_NAIVEHPP_
-#define SIMULATION_N_BODY_SIMD_CUDA_NAIVEHPP_
+#ifndef SIMULATION_N_BODY_SIMD_CUDA_NAIVE_HPP_
+#define SIMULATION_N_BODY_SIMD_CUDA_NAIVE_HPP_
 
 #include <string>
-
-#include "core/Bodies.hpp"
 #include "core/SimulationNBodyInterface.hpp"
 
 class SimulationNBodyCudaNaive : public SimulationNBodyInterface {
   protected:
-    accSoA_t<float> accelerations; /*!< Array of body acceleration structures. */
+    std::vector<accAoS_t<float>> accelerations; /*!< Array of body acceleration structures. */
+    accAoS_t<float>* cudaAccelerations;
+    dataAoS_t<float>* cudaBodies;
 
   public:
     SimulationNBodyCudaNaive(const unsigned long nBodies, const std::string &scheme = "galaxy", const float soft = 0.035f,
