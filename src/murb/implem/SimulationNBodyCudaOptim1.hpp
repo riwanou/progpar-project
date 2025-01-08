@@ -5,11 +5,20 @@
 
 #include "core/SimulationNBodyInterface.hpp"
 
+template <typename T>
+struct cudaPackedAoS_t {
+  T qx; /* position x. */
+  T qy; /* position y. */
+  T qz; /* position z. */
+  T m; /* mass. */
+};
+
 class SimulationNBodyCudaOptim1 : public SimulationNBodyInterface {
   protected:
     std::vector<accAoS_t<float>> accelerations; /*!< Array of body acceleration structures. */
+    std::vector<cudaPackedAoS_t<float>> packedBodies;
     accAoS_t<float>* cudaAccelerations;
-    dataAoS_t<float>* cudaBodies;
+    cudaPackedAoS_t<float>* cudaBodies;
 
   public:
     SimulationNBodyCudaOptim1(const unsigned long nBodies, const std::string &scheme = "galaxy", const float soft = 0.035f,

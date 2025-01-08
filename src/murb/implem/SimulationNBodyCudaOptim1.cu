@@ -11,13 +11,13 @@
         }                                                                                                              \
     }
 
-__global__ void kernel_cuda_optim1(dataAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations, const unsigned int nbBodies,
+__global__ void kernel_cuda_optim1(cudaPackedAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations, const unsigned int nbBodies,
                                    const float soft, const float G)
 {
-    const unsigned int sizePass = 1024;
+    const unsigned int sizePass = 2048;
     const unsigned int nbPass = (nbBodies + sizePass - 1) / sizePass;
 
-    extern __shared__ dataAoS_t<float> shBodies[sizePass];
+    extern __shared__ cudaPackedAoS_t<float> shBodies[sizePass];
     const unsigned int iBody = blockDim.x * blockIdx.x + threadIdx.x;
 
     float ax = 0.0f;
@@ -38,6 +38,7 @@ __global__ void kernel_cuda_optim1(dataAoS_t<float> *inBodies, accAoS_t<float> *
 
         // load in shared memory
         shBodies[threadIdx.x] = inBodies[startIdx + threadIdx.x];
+        shBodies[threadIdx.x + 1024] = inBodies[startIdx + threadIdx.x + 1024];
         __syncthreads();
 
         for (unsigned int jBody = startIdx; jBody < endIdx; jBody++) {
@@ -56,6 +57,8 @@ __global__ void kernel_cuda_optim1(dataAoS_t<float> *inBodies, accAoS_t<float> *
 
             shIdx++;
         }
+
+        __syncthreads();
     }
 
     outAccelerations[iBody].ax = ax;
@@ -70,19 +73,31 @@ SimulationNBodyCudaOptim1::SimulationNBodyCudaOptim1(const unsigned long nBodies
     this->flopsPerIte = (20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN()) +
                         (9.0f * (float)this->getBodies().getN());
     this->accelerations.resize(this->getBodies().getN());
+    this->packedBodies.resize(this->getBodies().getN());
 
     CUDA_CHECK(cudaMalloc(&cudaAccelerations, this->getBodies().getN() * sizeof(accAoS_t<float>)));
-    CUDA_CHECK(cudaMalloc(&cudaBodies, this->getBodies().getN() * sizeof(dataAoS_t<float>)));
+    CUDA_CHECK(cudaMalloc(&cudaBodies, this->getBodies().getN() * sizeof(cudaPackedAoS_t<float>)));
+}
+
+void SimulationNBodyCudaOptim1::initIteration()
+{
+    std::vector<dataAoS_t<float>> bodies = this->getBodies().getDataAoS();
+
+    for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
+        dataAoS_t<float> body = bodies[iBody];
+        this->packedBodies[iBody].qx = body.qx;
+        this->packedBodies[iBody].qy = body.qy;
+        this->packedBodies[iBody].qz = body.qz;
+        this->packedBodies[iBody].m = body.m;
+    }
 }
 
 void SimulationNBodyCudaOptim1::computeBodiesAcceleration()
 {
-    const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
-
     dim3 block(1024);
     dim3 grid((this->getBodies().getN() + block.x - 1) / block.x);
 
-    CUDA_CHECK(cudaMemcpy(this->cudaBodies, d.data(), this->getBodies().getN() * sizeof(dataAoS_t<float>),
+    CUDA_CHECK(cudaMemcpy(this->cudaBodies, this->packedBodies.data(), this->getBodies().getN() * sizeof(cudaPackedAoS_t<float>),
                           cudaMemcpyHostToDevice));
 
     kernel_cuda_optim1<<<grid, block>>>(
@@ -96,6 +111,7 @@ void SimulationNBodyCudaOptim1::computeBodiesAcceleration()
 
 void SimulationNBodyCudaOptim1::computeOneIteration()
 {
+    this->initIteration();
     this->computeBodiesAcceleration();
     // time integration
     this->bodies.updatePositionsAndVelocities(this->accelerations, this->dt);
