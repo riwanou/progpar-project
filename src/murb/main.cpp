@@ -29,6 +29,7 @@
 #include "implem/SimulationNBodyOCLNaive.hpp"
 
 #include "implem/SimulationNBodyCudaNaive.hpp"
+#include "implem/SimulationNBodyCudaOptim1.hpp"
 
 
 /* global variables */

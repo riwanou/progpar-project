@@ -41,7 +41,7 @@ void test_nbody_dumb(const size_t n, const float soft, const float dt, const siz
     }
 }
 
-TEST_CASE("n-body - Dumb", "[dmb]")
+TEST_CASE("n-body - Dumb", "[cpu+naive]")
 {
     SECTION("fp32 - n=13 - i=1 - random") { test_nbody_dumb(13, 2e+08, 3600, 1, "random", 1e-3); }
     SECTION("fp32 - n=13 - i=100 - random") { test_nbody_dumb(13, 2e+08, 3600, 100, "random", 5e-3); }

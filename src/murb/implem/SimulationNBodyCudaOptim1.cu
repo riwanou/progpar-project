@@ -12,7 +12,7 @@
     }                                                                \
 }
 
-__global__ void kernel_cuda_naive(dataAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations, 
+__global__ void kernel_cuda_optim1(dataAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations, 
                                   const size_t nbBodies, const float soft, const float G) {
     size_t iBody = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -66,7 +66,7 @@ void SimulationNBodyCudaOptim1::computeBodiesAcceleration()
     CUDA_CHECK(cudaMemcpy(this->cudaBodies, d.data(), 
                           this->getBodies().getN() * sizeof(dataAoS_t<float>), cudaMemcpyHostToDevice));
 
-    kernel_cuda_naive<<<grid, block>>>(this->cudaBodies, this->cudaAccelerations, this->getBodies().getN(), this->soft, this->G);
+    kernel_cuda_optim1<<<grid, block>>>(this->cudaBodies, this->cudaAccelerations, this->getBodies().getN(), this->soft, this->G);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 

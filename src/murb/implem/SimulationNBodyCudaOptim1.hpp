@@ -2,6 +2,7 @@
 #define SIMULATION_N_BODY_SIMD_CUDA_OPTIM1_HPP_
 
 #include <string>
+
 #include "core/SimulationNBodyInterface.hpp"
 
 class SimulationNBodyCudaOptim1 : public SimulationNBodyInterface {

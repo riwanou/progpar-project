@@ -37,7 +37,7 @@ void test_nbody_simd(const size_t n, const float soft, const float dt, const siz
     }
 }
 
-TEST_CASE("n-body - Simd", "[simd]")
+TEST_CASE("n-body - Simd", "[simd+naive]")
 {
     SECTION("fp32 - n=13 - i=1 - random") { test_nbody_simd(13, 2e+08, 3600, 1, "random", 1e-3); }
     SECTION("fp32 - n=13 - i=100 - random") { test_nbody_simd(13, 2e+08, 3600, 100, "random", 5e-3); }

@@ -37,7 +37,7 @@ void test_nbody_optim1_approx(const size_t n, const float soft, const float dt, 
     }
 }
 
-TEST_CASE("n-body - Optim1 Approx", "[optim1_approx]")
+TEST_CASE("n-body - Optim1 approx", "[cpu+optim1_approx]")
 {
     SECTION("fp32 - n=13 - i=1 - random") { test_nbody_optim1_approx(13, 2e+08, 3600, 1, "random", 1e-3); }
     SECTION("fp32 - n=13 - i=100 - random") { test_nbody_optim1_approx(13, 2e+08, 3600, 100, "random", 5e-3); }

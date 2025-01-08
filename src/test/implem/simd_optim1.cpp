@@ -37,7 +37,7 @@ void test_nbody_simd_optim1(const size_t n, const float soft, const float dt, co
     }
 }
 
-TEST_CASE("n-body - Simd Optim1", "[simd_optim1]")
+TEST_CASE("n-body - Simd optim1", "[simd+optim1]")
 {
     SECTION("fp32 - n=13 - i=1 - random") { test_nbody_simd_optim1(13, 2e+08, 3600, 1, "random", 1e-3); }
     SECTION("fp32 - n=13 - i=100 - random") { test_nbody_simd_optim1(13, 2e+08, 3600, 100, "random", 5e-3); }

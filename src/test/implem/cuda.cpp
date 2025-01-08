@@ -37,7 +37,7 @@ void test_nbody_cuda(const size_t n, const float soft, const float dt, const siz
     }
 }
 
-TEST_CASE("n-body - Simd Cuda", "[gpu+cuda]")
+TEST_CASE("n-body - Cuda naive", "[cuda+naive]")
 {
     SECTION("fp32 - n=13 - i=1 - random") { test_nbody_cuda(13, 2e+08, 3600, 1, "random", 1e-3); }
     SECTION("fp32 - n=13 - i=100 - random") { test_nbody_cuda(13, 2e+08, 3600, 100, "random", 5e-3); }
