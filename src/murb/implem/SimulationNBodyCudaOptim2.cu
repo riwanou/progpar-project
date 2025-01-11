@@ -47,7 +47,7 @@ __global__ void kernel_cuda_optim2(cudaPackedAoS_t<float> *inBodies, accAoS_t<fl
             const float rijz = shBodies[shIdx].qz - qz_i;
 
             const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared;
-            const float revSqrt = rsqrt(rijSquared);
+            const float revSqrt = rsqrtf(rijSquared);
             const float rsqrt3 = revSqrt * revSqrt * revSqrt;
             const float ai = G * shBodies[shIdx].m * rsqrt3;
 
