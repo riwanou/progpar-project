@@ -30,6 +30,7 @@
 
 #include "implem/SimulationNBodyCudaNaive.hpp"
 #include "implem/SimulationNBodyCudaOptim1.hpp"
+#include "implem/SimulationNBodyCudaOptim2.hpp"
 
 
 /* global variables */
@@ -96,6 +97,7 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"ocl+naive\"\n"
                      "\t\t\t - \"cuda+naive\"\n"
                      "\t\t\t - \"cuda+optim1\"\n"
+                     "\t\t\t - \"cuda+optim2\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
     docArgs["-soft"] = "softening factor.";
@@ -232,7 +234,9 @@ SimulationNBodyInterface *createImplem()
     else if(ImplTag == "cuda+optim1") {
         simu = new SimulationNBodyCudaOptim1(NBodies, BodiesScheme, Softening);
     }
-
+    else if(ImplTag == "cuda+optim2") {
+        simu = new SimulationNBodyCudaOptim2(NBodies, BodiesScheme, Softening);
+    }
     else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
         exit(-1);
