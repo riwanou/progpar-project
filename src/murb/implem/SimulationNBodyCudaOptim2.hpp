@@ -4,14 +4,7 @@
 #include <string>
 
 #include "core/SimulationNBodyInterface.hpp"
-
-template <typename T>
-struct cudaPackedAoS_t {
-  T qx; /* position x. */
-  T qy; /* position y. */
-  T qz; /* position z. */
-  T m; /* mass. */
-};
+#include "SimulationNBodyCudaOptim1.hpp"
 
 class SimulationNBodyCudaOptim2 : public SimulationNBodyInterface {
   protected:

@@ -11,49 +11,64 @@
         }                                                                                                              \
     }
 
-__global__ void kernel_cuda_optim2(cudaPackedAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations, const unsigned int nbBodies,
-                                   const float soft, const float G)
+__global__ void kernel_cuda_optim2(cudaPackedAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations,
+                                   const unsigned int nbBodies, const float soft, const float G, const int offset)
 {
-    const unsigned int sizePass = 2048;
-    const unsigned int nbPass = (nbBodies + sizePass - 1) / sizePass;
+    const int sizePass = 1536;
+    const int nbPass = (nbBodies + sizePass - 1) / sizePass;
 
-    extern __shared__ cudaPackedAoS_t<float> shBodies[sizePass];
-    const unsigned int iBody = blockDim.x * blockIdx.x + threadIdx.x;
+    static __shared__ cudaPackedAoS_t<float> shBodies[sizePass];
 
-    float ax = 0.0f;
-    float ay = 0.0f;
-    float az = 0.0f;
+    const int iBody = (blockDim.x * blockIdx.x + threadIdx.x) * 2;
+    const int iBody1 = (blockDim.x * blockIdx.x + threadIdx.x) * 2 + 1;
     const float softSquared = soft * soft;
 
-    float qx_i = inBodies[iBody].qx;
-    float qy_i = inBodies[iBody].qy;
-    float qz_i = inBodies[iBody].qz;
+    float4 a = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+    float4 a1 = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+    float4 q = make_float4(inBodies[iBody].qx, inBodies[iBody].qy, inBodies[iBody].qz, 0.0f);
+    float4 q1 = make_float4(inBodies[iBody1].qx, inBodies[iBody1].qy, inBodies[iBody1].qz, 0.0f);
 
     // shared memory is too small to contains all the bodies
     // acumulate the acceleration in multiple passes
-    for (uint pass = 0; pass < nbPass; pass++) {
-        const unsigned int startIdx = pass * sizePass;
-        const unsigned int endIdx = min((pass + 1) * sizePass, nbBodies); 
+    for (int pass = 0; pass < nbPass; pass++) {
+        const int startIdx = pass * sizePass;
+        const int endIdx = min((pass + 1) * sizePass, nbBodies);
         unsigned int shIdx = 0;
 
         // load in shared memory
         shBodies[threadIdx.x] = inBodies[startIdx + threadIdx.x];
-        shBodies[threadIdx.x + 1024] = inBodies[startIdx + threadIdx.x + 1024];
+        shBodies[threadIdx.x + 768] = inBodies[startIdx + threadIdx.x + 768];
         __syncthreads();
 
-        for (unsigned int jBody = startIdx; jBody < endIdx; jBody++) {
-            const float rijx = shBodies[shIdx].qx - qx_i;
-            const float rijy = shBodies[shIdx].qy - qy_i;
-            const float rijz = shBodies[shIdx].qz - qz_i;
+        for (int jBody = startIdx; jBody < endIdx; jBody++) {
+            float4 shBody = make_float4(shBodies[shIdx].qx, shBodies[shIdx].qy, shBodies[shIdx].qz, shBodies[shIdx].m);
 
-            const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared;
-            const float revSqrt = rsqrtf(rijSquared);
-            const float rsqrt3 = revSqrt * revSqrt * revSqrt;
-            const float ai = G * shBodies[shIdx].m * rsqrt3;
+            float rijx = shBody.x - q.x;
+            float rijy = shBody.y - q.y;
+            float rijz = shBody.z - q.z;
 
-            ax += ai * rijx;
-            ay += ai * rijy;
-            az += ai * rijz;
+            float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared;
+            float revSqrt = rsqrtf(rijSquared);
+            float rsqrt3 = revSqrt * revSqrt * revSqrt;
+            float ai = G * shBody.w * rsqrt3;
+
+            a.x += ai * rijx;
+            a.y += ai * rijy;
+            a.z += ai * rijz;
+
+            rijx = shBody.x - q1.x;
+            rijy = shBody.y - q1.y;
+            rijz = shBody.z - q1.z;
+
+            rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared;
+            revSqrt = rsqrtf(rijSquared);
+            rsqrt3 = revSqrt * revSqrt * revSqrt;
+            ai = G * shBody.w * rsqrt3;
+
+            a1.x += ai * rijx;
+            a1.y += ai * rijy;
+            a1.z += ai * rijz;
 
             shIdx++;
         }
@@ -61,9 +76,12 @@ __global__ void kernel_cuda_optim2(cudaPackedAoS_t<float> *inBodies, accAoS_t<fl
         __syncthreads();
     }
 
-    outAccelerations[iBody].ax = ax;
-    outAccelerations[iBody].ay = ay;
-    outAccelerations[iBody].az = az;
+    outAccelerations[iBody].ax = a.x;
+    outAccelerations[iBody].ay = a.y;
+    outAccelerations[iBody].az = a.z;
+    outAccelerations[iBody1].ax = a1.x;
+    outAccelerations[iBody1].ay = a1.y;
+    outAccelerations[iBody1].az = a1.z;
 }
 
 SimulationNBodyCudaOptim2::SimulationNBodyCudaOptim2(const unsigned long nBodies, const std::string &scheme,
@@ -94,14 +112,16 @@ void SimulationNBodyCudaOptim2::initIteration()
 
 void SimulationNBodyCudaOptim2::computeBodiesAcceleration()
 {
-    dim3 block(1024);
-    dim3 grid((this->getBodies().getN() + block.x - 1) / block.x);
+    dim3 block(768);
+    int nbBlocks = (this->getBodies().getN() + block.x - 1) / block.x;
+    nbBlocks = (nbBlocks + 1) / 2;
+    dim3 grid(nbBlocks);
 
-    CUDA_CHECK(cudaMemcpy(this->cudaBodies, this->packedBodies.data(), this->getBodies().getN() * sizeof(cudaPackedAoS_t<float>),
-                          cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(this->cudaBodies, this->packedBodies.data(),
+                          this->getBodies().getN() * sizeof(cudaPackedAoS_t<float>), cudaMemcpyHostToDevice));
 
-    kernel_cuda_optim1<<<grid, block>>>(
-        this->cudaBodies, this->cudaAccelerations, this->getBodies().getN(), this->soft, this->G);
+    kernel_cuda_optim2<<<grid, block>>>(this->cudaBodies, this->cudaAccelerations, this->getBodies().getN(), this->soft,
+                                        this->G, nbBlocks * block.x);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 
