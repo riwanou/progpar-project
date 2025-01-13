@@ -12,7 +12,7 @@
     }
 
 __global__ void kernel_cuda_optim2(cudaPackedAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations,
-                                   const unsigned int nbBodies, const float softSquared, const float G, const int offset)
+                                   const unsigned int nbBodies, const float soft, const float G, const int offset)
 {
     const int sizePass = 1536;
     const int nbPass = (nbBodies + sizePass - 1) / sizePass;
@@ -21,6 +21,7 @@ __global__ void kernel_cuda_optim2(cudaPackedAoS_t<float> *inBodies, accAoS_t<fl
 
     const int iBody = (blockDim.x * blockIdx.x + threadIdx.x) * 2;
     const int iBody1 = (blockDim.x * blockIdx.x + threadIdx.x) * 2 + 1;
+    const float softSquared = soft * soft;
 
     float4 a = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
     float4 a1 = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -119,7 +120,7 @@ void SimulationNBodyCudaOptim2::computeBodiesAcceleration()
     CUDA_CHECK(cudaMemcpy(this->cudaBodies, this->packedBodies.data(),
                           this->getBodies().getN() * sizeof(cudaPackedAoS_t<float>), cudaMemcpyHostToDevice));
 
-    kernel_cuda_optim2<<<grid, block>>>(this->cudaBodies, this->cudaAccelerations, this->getBodies().getN(), this->soft * this->soft,
+    kernel_cuda_optim2<<<grid, block>>>(this->cudaBodies, this->cudaAccelerations, this->getBodies().getN(), this->soft,
                                         this->G, nbBlocks * block.x);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
