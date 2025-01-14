@@ -9,7 +9,8 @@ SimulationNBodySimdOptim1::SimulationNBodySimdOptim1(const unsigned long nBodies
                                                      const float soft, const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = (20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN()) + (9.0f * (float)this->getBodies().getN());
+    const float N = this->getBodies().getN();
+    this->flopsPerIte = (20.f * N * N) + (9.0f * N);
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
@@ -32,14 +33,14 @@ void SimulationNBodySimdOptim1::computeBodiesAcceleration()
     mipp::Reg<float> r_rsqrt, r_softFactor, r_ai;
     mipp::Reg<float> r_ax, r_ay, r_az; 
     // compute e²
-    const float softSquared = std::pow(this->soft, 2);        // 1 flops
-    mipp::Reg<float> r_softSquared = mipp::set1(softSquared); // 1 flops
+    const float softSquared = std::pow(this->soft, 2);
+    mipp::Reg<float> r_softSquared = mipp::set1(softSquared);
 
     // tail loop
     size_t simd_loop_size = (this->getBodies().getN() / mipp::N<float>()) * mipp::N<float>();
 
     // simd
-    // flops = n² * 20 + n * 9
+    // flops = n² * 19 + n * 9
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
         float qx_i = d.qx[iBody];
         float qy_i = d.qy[iBody];
@@ -50,7 +51,7 @@ void SimulationNBodySimdOptim1::computeBodiesAcceleration()
         r_az = 0.f;
 
         // simd
-        // flops = n * 20
+        // flops = n * 19
         for (unsigned long jBody = 0; jBody < simd_loop_size; jBody += mipp::N<float>()) {
             r_qx_j.load(&d.qx[jBody]);
             r_qy_j.load(&d.qy[jBody]);
@@ -66,7 +67,7 @@ void SimulationNBodySimdOptim1::computeBodiesAcceleration()
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
             // a / b^(3/2) equivalent to: a * (1 / sqrt(b) * (1 / sqrt(b)) * (1 / sqrt(b))
             r_rsqrt = mipp::rsqrt_prec(r_rijSquared); // 1 flop
-            r_ai = (r_m_j * this->G) * (r_rsqrt * r_rsqrt * r_rsqrt); // 4 flops
+            r_ai = r_m_j * (r_rsqrt * r_rsqrt * r_rsqrt); // 3 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
             r_ax += r_ai * r_rijx; // 2 flops
@@ -74,9 +75,9 @@ void SimulationNBodySimdOptim1::computeBodiesAcceleration()
             r_az += r_ai * r_rijz; // 2 flops
         }
 
-        this->accelerations.ax[iBody] += mipp::sum(r_ax); // 3 flops
-        this->accelerations.ay[iBody] += mipp::sum(r_ay); // 3 flops
-        this->accelerations.az[iBody] += mipp::sum(r_az); // 3 flops
+        this->accelerations.ax[iBody] += mipp::sum(r_ax) * this->G; // 3 flops
+        this->accelerations.ay[iBody] += mipp::sum(r_ay) * this->G; // 3 flops
+        this->accelerations.az[iBody] += mipp::sum(r_az) * this->G; // 3 flops
 
         // remaining, elements in the j-array don't fit in a simd register
         // flops = (remaining n) * 21

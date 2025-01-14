@@ -7,7 +7,8 @@ SimulationNBodyOptim1Approx::SimulationNBodyOptim1Approx(const unsigned long nBo
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 29.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
+    const float N = this->getBodies().getN();
+    this->flopsPerIte = 29.f * (N * (N + 1) / 2);
     this->accelerations.resize(this->getBodies().getN());
 }
 
@@ -26,9 +27,9 @@ void SimulationNBodyOptim1Approx::computeBodiesAcceleration()
     // compute e²
     const float softSquared = this->soft * this->soft;
 
-    // flops = n² * 20
+    // flops = (n * (n + 1) / 2) * 29
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
-        // flops = n * 20
+        // flops = 29 per iteration
         for (unsigned long jBody = iBody + 1; jBody < this->getBodies().getN(); jBody++) {
             const float rijx = d[jBody].qx - d[iBody].qx; // 1 flop
             const float rijy = d[jBody].qy - d[iBody].qy; // 1 flop

@@ -27,7 +27,8 @@
 SimulationNBodyOCLNaive::SimulationNBodyOCLNaive(const unsigned long nBodies, const std::string &scheme, const float soft, const unsigned long randInit)
 	: SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-	this->flopsPerIte = 20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
+  const float N = this->getBodies().getN();
+  this->flopsPerIte = (20.f * N * N) + N;
 	this->accelerations.resize(this->getBodies().getN());
 
 	// OCL INITIALISATION

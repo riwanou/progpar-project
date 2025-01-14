@@ -9,7 +9,8 @@ SimulationNBodySimdNaive::SimulationNBodySimdNaive(const unsigned long nBodies, 
                                          const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = (20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN()) + (9.0f * (float)this->getBodies().getN());
+    const float N = this->getBodies().getN();
+    this->flopsPerIte = (20.f * N * N) + (6.0f * N);
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
@@ -32,8 +33,8 @@ void SimulationNBodySimdNaive::computeBodiesAcceleration()
     mipp::Reg<float> r_softFactor, r_ai;
     mipp::Reg<float> r_ax, r_ay, r_az;
     // compute e²
-    const float softSquared = std::pow(this->soft, 2);        // 1 flops
-    mipp::Reg<float> r_softSquared = mipp::set1(softSquared); // 1 flops
+    const float softSquared = std::pow(this->soft, 2);
+    mipp::Reg<float> r_softSquared = mipp::set1(softSquared);
 
     // tail loop
     size_t simd_loop_size = (this->getBodies().getN() / mipp::N<float>()) * mipp::N<float>();
@@ -73,9 +74,9 @@ void SimulationNBodySimdNaive::computeBodiesAcceleration()
             r_az += r_ai * r_rijz; // 2 flops
         }
 
-        this->accelerations.ax[iBody] += mipp::sum(r_ax); // 3 flops
-        this->accelerations.ay[iBody] += mipp::sum(r_ay); // 3 flops
-        this->accelerations.az[iBody] += mipp::sum(r_az); // 3 flops
+        this->accelerations.ax[iBody] += mipp::sum(r_ax); // 2 flops
+        this->accelerations.ay[iBody] += mipp::sum(r_ay); // 2 flops
+        this->accelerations.az[iBody] += mipp::sum(r_az); // 2 flops
 
         // remaining, elements in the j-array don't fit in a simd register
         for (unsigned long jBody = simd_loop_size; jBody < this->getBodies().getN(); jBody++) {

@@ -17,6 +17,7 @@ typedef struct dataAoS_t {
 } dataAoS_t;
 
 // Kernel
+// flops = n² * 20 + n
 __kernel void compute_bodies_acceleration(
 	__global accAoS_t* accelerations,
 	__global const dataAoS_t* data, 
@@ -29,21 +30,22 @@ __kernel void compute_bodies_acceleration(
 	float ay = 0.0f;
 	float az = 0.0f;
 
-	float softSquared = soft * soft; 
+	float softSquared = soft * soft; // 1 flop
 
+	// flops = 20
 	for (int jBody = 0; jBody < get_global_size(0); jBody++) {
-		const float rijx = data[jBody].qx - data[iBody].qx;
-		const float rijy = data[jBody].qy - data[iBody].qy;
-		const float rijz = data[jBody].qz - data[iBody].qz;
+		const float rijx = data[jBody].qx - data[iBody].qx; // 1 flop
+		const float rijy = data[jBody].qy - data[iBody].qy; // 1 flop
+		const float rijz = data[jBody].qz - data[iBody].qz; // 1 flop
 
-		const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared;
-        const float rsqrt = native_rsqrt(rijSquared);
-        const float rsqrt3 = rsqrt * rsqrt * rsqrt;
-		const float ai = G * data[jBody].m * rsqrt3;
+		const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared; // 6 flops
+        const float rsqrt = native_rsqrt(rijSquared); // 1 flop
+        const float rsqrt3 = rsqrt * rsqrt * rsqrt; // 2 flops
+		const float ai = G * data[jBody].m * rsqrt3; // 2 flops
 
-		ax += ai * rijx;
-		ay += ai * rijy;
-		az += ai * rijz;
+		ax += ai * rijx; // 2 flops
+		ay += ai * rijy; // 2 flops
+		az += ai * rijz; // 2 flops
 	}
 
 	accelerations[iBody].ax = ax;

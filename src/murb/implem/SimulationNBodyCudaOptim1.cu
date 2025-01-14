@@ -11,19 +11,20 @@
         }                                                                                                              \
     }
 
+// flops = (n² / 2048) * (8 + (n * 21)) + 6 * n
 __global__ void kernel_cuda_optim1(cudaPackedAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations, const unsigned int nbBodies,
                                    const float soft, const float G)
 {
     const unsigned int sizePass = 2048;
-    const unsigned int nbPass = (nbBodies + sizePass - 1) / sizePass;
+    const unsigned int nbPass = (nbBodies + sizePass - 1) / sizePass; // 3 flops
 
     extern __shared__ cudaPackedAoS_t<float> shBodies[sizePass];
-    const unsigned int iBody = blockDim.x * blockIdx.x + threadIdx.x;
+    const unsigned int iBody = blockDim.x * blockIdx.x + threadIdx.x; // 2 flops
 
     float ax = 0.0f;
     float ay = 0.0f;
     float az = 0.0f;
-    const float softSquared = soft * soft;
+    const float softSquared = soft * soft; // 1 flop
 
     float qx_i = inBodies[iBody].qx;
     float qy_i = inBodies[iBody].qy;
@@ -31,31 +32,33 @@ __global__ void kernel_cuda_optim1(cudaPackedAoS_t<float> *inBodies, accAoS_t<fl
 
     // shared memory is too small to contains all the bodies
     // acumulate the acceleration in multiple passes
+    // flops = (n / 2048) * (8 + (n * 21))
     for (uint pass = 0; pass < nbPass; pass++) {
-        const unsigned int startIdx = pass * sizePass;
-        const unsigned int endIdx = min((pass + 1) * sizePass, nbBodies); 
+        const unsigned int startIdx = pass * sizePass; // 1 flop
+        const unsigned int endIdx = min((pass + 1) * sizePass, nbBodies);  // 3 flops
         unsigned int shIdx = 0;
 
         // load in shared memory
-        shBodies[threadIdx.x] = inBodies[startIdx + threadIdx.x];
-        shBodies[threadIdx.x + 1024] = inBodies[startIdx + threadIdx.x + 1024];
+        shBodies[threadIdx.x] = inBodies[startIdx + threadIdx.x]; // 1 flop
+        shBodies[threadIdx.x + 1024] = inBodies[startIdx + threadIdx.x + 1024]; // 3 flops
         __syncthreads();
 
+        // flops = n * 21
         for (unsigned int jBody = startIdx; jBody < endIdx; jBody++) {
-            const float rijx = shBodies[shIdx].qx - qx_i;
-            const float rijy = shBodies[shIdx].qy - qy_i;
-            const float rijz = shBodies[shIdx].qz - qz_i;
+            const float rijx = shBodies[shIdx].qx - qx_i; // 1 flop
+            const float rijy = shBodies[shIdx].qy - qy_i; // 1 flop
+            const float rijz = shBodies[shIdx].qz - qz_i; // 1 flop
 
-            const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared;
-            const float revSqrt = rsqrtf(rijSquared);
-            const float rsqrt3 = revSqrt * revSqrt * revSqrt;
-            const float ai = G * shBodies[shIdx].m * rsqrt3;
+            const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared; // 6 flops
+            const float revSqrt = rsqrtf(rijSquared); // 1 flop
+            const float rsqrt3 = revSqrt * revSqrt * revSqrt; // 2 flops
+            const float ai = G * shBodies[shIdx].m * rsqrt3; // 2 flops
 
-            ax += ai * rijx;
-            ay += ai * rijy;
-            az += ai * rijz;
+            ax += ai * rijx; // 2 flops
+            ay += ai * rijy; // 2 flops
+            az += ai * rijz; // 2 flops
 
-            shIdx++;
+            shIdx++; // 1 flop
         }
 
         __syncthreads();
@@ -70,8 +73,10 @@ SimulationNBodyCudaOptim1::SimulationNBodyCudaOptim1(const unsigned long nBodies
                                                      const float soft, const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = (20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN()) +
-                        (9.0f * (float)this->getBodies().getN());
+    // 2048 is shared memory size, corresponding to the number of passes.
+    // flops = (n² / 2048) * (8 + (n * 21)) + 6 * n
+    const float N = this->getBodies().getN();
+    this->flopsPerIte = (N * N / 2048) * (8 + (N * 21)) + 6 * N;
     this->accelerations.resize(this->getBodies().getN());
     this->packedBodies.resize(this->getBodies().getN());
 

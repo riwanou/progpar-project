@@ -12,6 +12,7 @@
         }                                                                                                              \
     }
 
+// flops = n² * 20 + n
 __global__ void kernel_cuda_naive(dataAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations, const size_t nbBodies,
                                   const float soft, const float G)
 {
@@ -21,25 +22,26 @@ __global__ void kernel_cuda_naive(dataAoS_t<float> *inBodies, accAoS_t<float> *o
     float ax = 0.0f;
     float ay = 0.0f;
     float az = 0.0f;
-    float softSquared = soft * soft;
+    float softSquared = soft * soft; // 1 flop
 
     float qx = inBodies[iBody].qx;
     float qy = inBodies[iBody].qy;
     float qz = inBodies[iBody].qz;
 
+    // flops = n * 20
     for (int jBody = 0; jBody < nbBodies; jBody++) {
-        const float rijx = inBodies[jBody].qx - qx;
-        const float rijy = inBodies[jBody].qy - qy;
-        const float rijz = inBodies[jBody].qz - qz;
+        const float rijx = inBodies[jBody].qx - qx; // 1 flop
+        const float rijy = inBodies[jBody].qy - qy; // 1 flop
+        const float rijz = inBodies[jBody].qz - qz; // 1 flop
 
-        const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared;
-        const float revSqrt = rsqrtf(rijSquared);
-        const float rsqrt3 = revSqrt * revSqrt * revSqrt;
-        const float ai = G * inBodies[jBody].m * rsqrt3;
+        const float rijSquared = rijx * rijx + rijy * rijy + rijz * rijz + softSquared; // 6 flops
+        const float revSqrt = rsqrtf(rijSquared); // 1 flop
+        const float rsqrt3 = revSqrt * revSqrt * revSqrt; // 2 flops
+        const float ai = G * inBodies[jBody].m * rsqrt3; // 2 flops
 
-        ax += ai * rijx;
-        ay += ai * rijy;
-        az += ai * rijz;
+        ax += ai * rijx; // 2 flops
+        ay += ai * rijy; // 2 flops
+        az += ai * rijz; // 2 flops
     }
 
     outAccelerations[iBody].ax = ax;
@@ -51,8 +53,8 @@ SimulationNBodyCudaNaive::SimulationNBodyCudaNaive(const unsigned long nBodies, 
                                                    const float soft, const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = (20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN()) +
-                        (9.0f * (float)this->getBodies().getN());
+    const float N = this->getBodies().getN();
+    this->flopsPerIte = (20.f * N * N) + N;
     this->accelerations.resize(this->getBodies().getN());
 
     CUDA_CHECK(cudaMalloc(&cudaAccelerations, this->getBodies().getN() * sizeof(accAoS_t<float>)));

@@ -10,7 +10,8 @@ SimulationNBodySimdOptim2::SimulationNBodySimdOptim2(const unsigned long nBodies
                                                      const float soft, const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
+    const float N = this->getBodies().getN();
+    this->flopsPerIte = (21.f * N * N);
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
@@ -53,8 +54,8 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
     mask.fill(3);
     mipp::Reg<float> r_shuf_m = mipp::cmask<float>(mask.data());
     // compute e²
-    const float softSquared = std::pow(this->soft, 2);        // 1 flops
-    mipp::Reg<float> r_softSquared = mipp::set1(softSquared); // 1 flops
+    const float softSquared = std::pow(this->soft, 2);
+    mipp::Reg<float> r_softSquared = mipp::set1(softSquared);
 
     // tail loop
     size_t simd_loop_size = (this->getBodies().getN() / mipp::N<float>()) * mipp::N<float>();
@@ -71,13 +72,13 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
         r_az.load(&this->accelerations.az[iBody]);
 
         // simd
-        // flops = n * 20
+        // flops = n * 21
         for (unsigned long jBody = 0; jBody < this->getBodies().getN(); jBody += 1) {
             r_packed_j.load((const float *)(&this->packed_bodies[jBody]));
-            r_qx_j = mipp::shuff(r_packed_j, r_shuf_x);
-            r_qy_j = mipp::shuff(r_packed_j, r_shuf_y);
-            r_qz_j = mipp::shuff(r_packed_j, r_shuf_z);
-            r_m_j = mipp::shuff(r_packed_j, r_shuf_m);
+            r_qx_j = mipp::shuff(r_packed_j, r_shuf_x); // 1 flop
+            r_qy_j = mipp::shuff(r_packed_j, r_shuf_y); // 1 flop
+            r_qz_j = mipp::shuff(r_packed_j, r_shuf_z); // 1 flop
+            r_m_j = mipp::shuff(r_packed_j, r_shuf_m); // 1 flop
 
             r_rijx = r_qx_j - r_qx_i; // 1 flop
             r_rijy = r_qy_j - r_qy_i; // 1 flop
@@ -91,9 +92,9 @@ void SimulationNBodySimdOptim2::computeBodiesAcceleration()
             r_ai = (r_m_j * this->G) * (r_rsqrt * r_rsqrt * r_rsqrt); // 4 flops
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            r_ax = mipp::fmadd(r_ai, r_rijx, r_ax); // 2 flops
-            r_ay = mipp::fmadd(r_ai, r_rijy, r_ay); // 2 flops
-            r_az = mipp::fmadd(r_ai, r_rijz, r_az); // 2 flops
+            r_ax = mipp::fmadd(r_ai, r_rijx, r_ax); // 1 flops
+            r_ay = mipp::fmadd(r_ai, r_rijy, r_ay); // 1 flops
+            r_az = mipp::fmadd(r_ai, r_rijz, r_az); // 1 flops
         }
 
         // store
