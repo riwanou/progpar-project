@@ -36,6 +36,18 @@ On Ubuntu 20.04 you can install the required libraries as follow:
 sudo apt install libglfw3-dev libglew-dev libglm-dev
 ```
 
+To run the benchmarks you have to install Matplotlib, Pandas and Numpy
+```bash
+pip install matplotlib pandas numpy
+# Run from build directory
+python3 ../bench.py
+# or with uv
+uv venv
+uv pip install matplotlib pandas numpy
+# Run from build directory
+uv run ../bench.py
+```
+
 ### Compilation with Makefile
 
 Open a terminal and type (from the `MUrB` root folder):
@@ -82,6 +94,28 @@ Simulation ended.
 
 Entire simulation took 1370.0 ms (729.9 FPS)
 ```
+
+### Optimization variant
+You can run a specific optimization mode using this command:
+
+```bash
+./bin/murb -n 1000 -i 1000 --im {version name}
+```
+
+Available Versions :
+- `cpu+naive` : The original version without optimisation
+- `cpu+optim1` : The original version with triangle optimization
+- `cpu+optim1_approx` : The optim1 version with rsqrt
+- `simd+naive` : The naive version in SIMD
+- `simd+optim1` : SIMD version with rsqrt
+- `simd+optim2` : SIMD version with shuffle and packed data
+- `simd+omp` : SIMD optim1 version with OpenMP, more efficient with `OMP_NUM_THREADS=6`
+- `ocl+naive` : The naive version in GPU with OpenCL
+- `cuda+naive` : The naive version in GPU with CUDA
+- `cuda+optim1` : The naive version with packed data and shared memory
+- `cuda+optim2` : The optim1 version with 2 iBodies per thread
+- `cuda+optim3` : The cuda optim2 version with struct of arrays instead of array of structs
+
 
 ### Command Line Parameters
 

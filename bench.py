@@ -208,7 +208,7 @@ def gen_data_output(data, data_output):
         file.write(f"{','.join(map(str, data))}\n")
 
 
-def plot_benches(selected_variants=None, output_file_name="benches", bodies=None):
+def plot_benches(selected_variants=None, output_file_name="benches", bodies=None, types=None):
     data = pd.read_csv(data_output)
 
     if selected_variants:
@@ -225,11 +225,13 @@ def plot_benches(selected_variants=None, output_file_name="benches", bodies=None
     plt.rc("axes", axisbelow=True)
     plt.grid(linestyle="dashed")
 
+    std_types = f"std_{types}"
     plt.bar(
-        data["variant"], data["fps"], yerr=data["std_fps"], capsize=4
+        data["variant"], data[types], yerr=data[std_types], capsize=4
     )
     plt.xlabel(f"Simulation optimization variants ({bodies} bodies)")
-    plt.ylabel("FPS")
+    
+    plt.ylabel(types.upper())
 
     output_file = f"{data_root}/{output_file_name}.png"
     plt.savefig(output_file, dpi=400)
@@ -237,16 +239,25 @@ def plot_benches(selected_variants=None, output_file_name="benches", bodies=None
     print(f"Graphique sauvegardé sous {output_file}")
 
 
-init_data_output()
-run_benches()
-run_omp_benches()
+# init_data_output()
+# run_benches()
+# run_omp_benches()
 
 # Generate plot
-plot_benches(["cpu+naive", "cpu+optim1", "cpu+optim1_approx"], "benches_cpu", 1000)
-plot_benches(["simd+naive", "simd+optim1", "simd+optim2"], "benches_simd", 10000)
-plot_benches(["ocl+naive", "cuda+naive", "cuda+optim1", "cuda+optim2", "cuda+optim3"], "benches_gpu", 30000)
+plot_benches(["cpu+naive", "cpu+optim1", "cpu+optim1_approx"], "benches_cpu_fps", 1000, "fps")
+plot_benches(["simd+naive", "simd+optim1", "simd+optim2"], "benches_simd_fps", 10000, "fps")
+plot_benches(["ocl+naive", "cuda+naive", "cuda+optim1", "cuda+optim2", "cuda+optim3"], "benches_gpu_fps", 30000, "fps")
 plot_benches(
     ["cpu+optim1_approx", "simd+optim1", "simd+omp", "cuda+optim2"],
-    "benches_fast",
-    10000,
+    "benches_fast_fps",
+    10000, "fps"
+)
+
+plot_benches(["cpu+naive", "cpu+optim1", "cpu+optim1_approx"], "benches_cpu_gflops", 1000, "gflops")
+plot_benches(["simd+naive", "simd+optim1", "simd+optim2"], "benches_simd_gflops", 10000, "gflops")
+plot_benches(["ocl+naive", "cuda+naive", "cuda+optim1", "cuda+optim2", "cuda+optim3"], "benches_gpu_gflops", 30000, "gflops")
+plot_benches(
+    ["cpu+optim1_approx", "simd+optim1", "simd+omp", "cuda+optim2"],
+    "benches_fast_gflops",
+    10000, "gflops"
 )
