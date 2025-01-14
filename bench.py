@@ -19,19 +19,20 @@ patterns = {
 }
 
 benches = [
-    {"variant": "cpu+naive", "bodies": 1000, "iterations": 500},
+    {"variant": "cpu+naive", "bodies": 1000, "iterations": 600},
     {"variant": "cpu+optim1", "bodies": 1000, "iterations": 500},
-    {"variant": "cpu+optim1_approx", "bodies": 1000, "iterations": 500},
+    {"variant": "cpu+optim1_approx", "bodies": 1000, "iterations": 2000},
     {"variant": "cpu+optim1_approx", "bodies": 10000, "iterations": 10},
-    {"variant": "simd+naive", "bodies": 10000, "iterations": 100},
-    {"variant": "simd+optim1", "bodies": 10000, "iterations": 100},
-    {"variant": "simd+optim2", "bodies": 10000, "iterations": 100},
+    {"variant": "simd+naive", "bodies": 10000, "iterations": 50},
+    {"variant": "simd+optim1", "bodies": 10000, "iterations": 50},
+    {"variant": "simd+optim2", "bodies": 10000, "iterations": 50},
     {"variant": "simd+omp", "bodies": 10000, "iterations": 200},
-    {"variant": "ocl+naive", "bodies": 30000, "iterations": 200},
-    {"variant": "cuda+naive", "bodies": 30000, "iterations": 200},
+    {"variant": "ocl+naive", "bodies": 30000, "iterations": 150},
+    {"variant": "cuda+naive", "bodies": 30000, "iterations": 150},
     {"variant": "cuda+optim1", "bodies": 30000, "iterations": 200},
-    {"variant": "cuda+optim1", "bodies": 10000, "iterations": 2000},
+    {"variant": "cuda+optim2", "bodies": 10000, "iterations": 2000},
     {"variant": "cuda+optim2", "bodies": 30000, "iterations": 200},
+    {"variant": "cuda+optim3", "bodies": 30000, "iterations": 200},
 ]
 
 
@@ -162,38 +163,36 @@ def plot_speedup_omp(data, bodies, title):
     plt.plot(nb_cores, nb_cores, "--", label="Optimal", color="red")
     plt.legend(["Experimental", "Optimal"])
     plt.grid(linestyle="dashed")
-    plt.savefig(f"{data_root}/benches_omp{bodies}.png")
+    plt.savefig(f"{data_root}/benches_omp.png")
     plt.close()
 
 
 def run_omp_benches():
-    nb_iters = [1000, 500]
-    nb_bodies = [1000, 2000]
+    nb_iters = 600
+    nb_bodies = 5000
     stats = []
 
-    for i in range(len(nb_bodies)):
-        bodies = nb_bodies[i]
-        iterations = nb_iters[i]
+    bodies = nb_bodies
+    iterations = nb_iters
 
-        omp_bench = [
-            f"OMP_NUM_THREADS=1 ./build/bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
-            f"OMP_NUM_THREADS=2 ./build/bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
-            f"OMP_NUM_THREADS=3 ./build/bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
-            f"OMP_NUM_THREADS=4 ./build/bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
-            f"OMP_NUM_THREADS=5 ./build/bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
-            f"OMP_NUM_THREADS=6 ./build/bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
-        ]
+    omp_bench = [
+        f"OMP_NUM_THREADS=1 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=2 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=3 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=4 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=5 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=6 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+    ]
 
-        for bench in omp_bench:
-            bench_stats = run_omp_simu(bench, bodies)
-            stats.append(bench_stats)
-            gen_data_output(bench_stats, data_output_omp)
+    for bench in omp_bench:
+        bench_stats = run_omp_simu(bench, bodies)
+        stats.append(bench_stats)
+        gen_data_output(bench_stats, data_output_omp)
 
     data = pd.read_csv(data_output_omp)
-    for bodies in nb_bodies:
-        subset = data[data["bodies"] == bodies]
-        fps_data = subset["fps"].to_numpy()
-        plot_speedup_omp(fps_data[:6], bodies, f"Speedup for {bodies} bodies")
+    subset = data[data["bodies"] == bodies]
+    fps_data = subset["fps"].to_numpy()
+    plot_speedup_omp(fps_data[:6], bodies, f"Speedup for {bodies} bodies")
 
 
 def init_data_output():
@@ -209,11 +208,14 @@ def gen_data_output(data, data_output):
         file.write(f"{','.join(map(str, data))}\n")
 
 
-def plot_benches(selected_variants=None, output_file_name="benches"):
+def plot_benches(selected_variants=None, output_file_name="benches", bodies=None):
     data = pd.read_csv(data_output)
 
     if selected_variants:
         data = data[data["variant"].isin(selected_variants)]
+
+    if bodies is not None:
+        data = data[data["bodies"] == bodies]
 
     if data.empty:
         print("Aucune donnée disponible pour les variantes sélectionnées.")
@@ -224,11 +226,10 @@ def plot_benches(selected_variants=None, output_file_name="benches"):
     plt.grid(linestyle="dashed")
 
     plt.bar(
-        data["variant"], data["fps"], yerr=data["std_fps"], capsize=4, color="#4caf50"
+        data["variant"], data["fps"], yerr=data["std_fps"], capsize=4
     )
-    plt.xlabel(f"Simulation optimization variants ({nb_bodies} bodies)")
-    plt.ylabel("Frame rate (FPS)")
-    plt.title("Comparaison des performances des variantes")
+    plt.xlabel(f"Simulation optimization variants ({bodies} bodies)")
+    plt.ylabel("FPS")
 
     output_file = f"{data_root}/{output_file_name}.png"
     plt.savefig(output_file, dpi=400)
@@ -238,17 +239,14 @@ def plot_benches(selected_variants=None, output_file_name="benches"):
 
 init_data_output()
 run_benches()
-# run_omp_benches()
+run_omp_benches()
+
+# Generate plot
 plot_benches(["cpu+naive", "cpu+optim1", "cpu+optim1_approx"], "benches_cpu", 1000)
-
 plot_benches(["simd+naive", "simd+optim1", "simd+optim2"], "benches_simd", 10000)
-
-plot_benches(["cuda+naive", "cuda+optim1", "cuda+optim2"], "benches_cuda", 30000)
-
-plot_benches(["ocl+naive", "cuda+naive"], "benches_gpu", 30000)
-
+plot_benches(["ocl+naive", "cuda+naive", "cuda+optim1", "cuda+optim2", "cuda+optim3"], "benches_gpu", 30000)
 plot_benches(
-    ["cpu+omptim1_approx", "simd+optim1", "simd+omp", "cuda+omptim1"],
+    ["cpu+optim1_approx", "simd+optim1", "simd+omp", "cuda+optim2"],
     "benches_fast",
     10000,
 )
