@@ -11,7 +11,7 @@
         }                                                                                                              \
     }
 
-// flops = (n² / 2048) * (8 + (n * 21)) + 6 * n
+// flops = (n² / 2048) * (8 + (2048 * 21)) + 6 * n
 __global__ void kernel_cuda_optim1(cudaPackedAoS_t<float> *inBodies, accAoS_t<float> *outAccelerations, const unsigned int nbBodies,
                                    const float soft, const float G)
 {
@@ -32,7 +32,7 @@ __global__ void kernel_cuda_optim1(cudaPackedAoS_t<float> *inBodies, accAoS_t<fl
 
     // shared memory is too small to contains all the bodies
     // acumulate the acceleration in multiple passes
-    // flops = (n / 2048) * (8 + (n * 21))
+    // flops = (n / 2048) * (8 + (2048 * 21))
     for (uint pass = 0; pass < nbPass; pass++) {
         const unsigned int startIdx = pass * sizePass; // 1 flop
         const unsigned int endIdx = min((pass + 1) * sizePass, nbBodies);  // 3 flops
@@ -43,7 +43,7 @@ __global__ void kernel_cuda_optim1(cudaPackedAoS_t<float> *inBodies, accAoS_t<fl
         shBodies[threadIdx.x + 1024] = inBodies[startIdx + threadIdx.x + 1024]; // 3 flops
         __syncthreads();
 
-        // flops = n * 21
+        // flops = 2048 * 21
         for (unsigned int jBody = startIdx; jBody < endIdx; jBody++) {
             const float rijx = shBodies[shIdx].qx - qx_i; // 1 flop
             const float rijy = shBodies[shIdx].qy - qy_i; // 1 flop
@@ -74,9 +74,9 @@ SimulationNBodyCudaOptim1::SimulationNBodyCudaOptim1(const unsigned long nBodies
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
     // 2048 is shared memory size, corresponding to the number of passes.
-    // flops = (n² / 2048) * (8 + (n * 21)) + 6 * n
+    // flops = (n² / 2048) * (8 + (2048 * 21)) + 6 * n
     const float N = this->getBodies().getN();
-    this->flopsPerIte = (N * N / 2048) * (8 + (N * 21)) + 6 * N;
+    this->flopsPerIte = (N * N / 2048) * (8 + (2048 * 21)) + 6 * N;
     this->accelerations.resize(this->getBodies().getN());
     this->packedBodies.resize(this->getBodies().getN());
 

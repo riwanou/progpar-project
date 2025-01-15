@@ -221,20 +221,19 @@ def plot_benches(selected_variants=None, output_file_name="benches", bodies=None
         print("Aucune donnée disponible pour les variantes sélectionnées.")
         return
 
-    plt.figure(figsize=(12, 8))
     plt.rc("axes", axisbelow=True)
     plt.grid(linestyle="dashed")
 
     std_types = f"std_{types}"
     plt.bar(
-        data["variant"], data[types], yerr=data[std_types], capsize=4
+        data["variant"], data[types], yerr=data[std_types], capsize=4, width=0.6
     )
     plt.xlabel(f"Simulation optimization variants ({bodies} bodies)")
     
     plt.ylabel(types.upper())
 
     output_file = f"{data_root}/{output_file_name}.png"
-    plt.savefig(output_file, dpi=400)
+    plt.savefig(output_file, bbox_inches="tight")
     plt.close()
     print(f"Graphique sauvegardé sous {output_file}")
 

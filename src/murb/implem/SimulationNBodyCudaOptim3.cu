@@ -11,7 +11,7 @@
         }                                                                                                              \
     }
 
-// flops = (n² / 1536) * (8 + (n * 39)) + 17 * n
+// flops = (n² / 1536) * (8 + (1536 * 39)) + 17 * n
 __global__ void kernel_cuda_optim2(float *in_qx, float *in_qy, float *in_qz, float *in_m, accAoS_t<float> *outAccelerations,
                                    const unsigned int nbBodies, const float soft, const float G, const int offset)
 {
@@ -35,7 +35,7 @@ __global__ void kernel_cuda_optim2(float *in_qx, float *in_qy, float *in_qz, flo
 
     // shared memory is too small to contains all the bodies
     // acumulate the acceleration in multiple passes
-    // flops = (n / 1536) * (8 + (n * 39))
+    // flops = (n / 1536) * (8 + (1536 * 39))
     for (int pass = 0; pass < nbPass; pass++) {
         const int startIdx = pass * sizePass; // 1 flop
         const int endIdx = min((pass + 1) * sizePass, nbBodies); // 3 flops
@@ -52,7 +52,7 @@ __global__ void kernel_cuda_optim2(float *in_qx, float *in_qy, float *in_qz, flo
         shBodies_m[threadIdx.x + 768] = in_m[startIdx + threadIdx.x + 768]; // 3 flops
         __syncthreads();
 
-        // flops = n * 39
+        // flops = 1536 * 39
         for (int jBody = startIdx; jBody < endIdx; jBody++) {
             float4 shBody = make_float4(shBodies_x[shIdx], shBodies_y[shIdx], shBodies_z[shIdx], shBodies_m[shIdx]);
 
@@ -101,9 +101,9 @@ SimulationNBodyCudaOptim3::SimulationNBodyCudaOptim3(const unsigned long nBodies
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
     // 2048 is shared memory size, corresponding to the number of passes.
-    // flops = (n² / 1536) * (8 + (n * 39)) + 17 * n
+    // flops = (n² / 1536) * (8 + (1536 * 39)) + 17 * n
     const float N = this->getBodies().getN();
-    this->flopsPerIte = (N * N / 1536) * (8 + (N * 39)) + 17 * N;
+    this->flopsPerIte = (N * N / 1536) * (8 + (1536 * 39)) + 17 * N;
     this->accelerations.resize(this->getBodies().getN());
     
     CUDA_CHECK(cudaMalloc(&cudaAccelerations, this->getBodies().getN() * sizeof(accAoS_t<float>)));
