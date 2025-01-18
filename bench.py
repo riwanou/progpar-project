@@ -151,13 +151,12 @@ def run_omp_simu(bench: str, nb_bodies):
         std_gflops,
     )
 
-
 def plot_speedup_omp(data, bodies, title):
     plt.title(title)
     plt.xlabel("Number of cores")
     plt.ylabel("Speedup")
 
-    nb_cores = [1, 2, 3, 4, 5, 6]
+    nb_cores = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     speedup = data / data[0]
     plt.plot(nb_cores, speedup, "o-", label="Experimental", color="#3586bc")
     plt.plot(nb_cores, nb_cores, "--", label="Optimal", color="red")
@@ -192,7 +191,7 @@ def run_omp_benches():
     data = pd.read_csv(data_output_omp)
     subset = data[data["bodies"] == bodies]
     fps_data = subset["fps"].to_numpy()
-    plot_speedup_omp(fps_data[:6], bodies, f"Speedup for {bodies} bodies")
+    plot_speedup_omp(fps_data, bodies, f"Speedup for {bodies} bodies")
 
 
 def init_data_output():
@@ -238,9 +237,9 @@ def plot_benches(selected_variants=None, output_file_name="benches", bodies=None
     print(f"Graphique sauvegardé sous {output_file}")
 
 
-# init_data_output()
-# run_benches()
-# run_omp_benches()
+init_data_output()
+run_benches()
+run_omp_benches()
 
 # Generate plot
 plot_benches(["cpu+naive", "cpu+optim1", "cpu+optim1_approx"], "benches_cpu_fps", 1000, "fps")

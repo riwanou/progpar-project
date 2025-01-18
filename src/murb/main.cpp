@@ -28,11 +28,12 @@
 
 #include "implem/SimulationNBodyOCLNaive.hpp"
 
-#include "implem/SimulationNBodyCudaNaive.hpp"
-#include "implem/SimulationNBodyCudaOptim1.hpp"
-#include "implem/SimulationNBodyCudaOptim2.hpp"
-#include "implem/SimulationNBodyCudaOptim3.hpp"
+// #include "implem/SimulationNBodyCudaNaive.hpp"
+// #include "implem/SimulationNBodyCudaOptim1.hpp"
+// #include "implem/SimulationNBodyCudaOptim2.hpp"
+// #include "implem/SimulationNBodyCudaOptim3.hpp"
 
+#include "implem/SimulationNBodyHetero.hpp"
 
 /* global variables */
 unsigned long NBodies;               /*!< Number of bodies. */
@@ -100,6 +101,7 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"cuda+optim1\"\n"
                      "\t\t\t - \"cuda+optim2\"\n"
                      "\t\t\t - \"cuda+optim3\"\n"
+                     "\t\t\t - \"cuda+hetero\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
     docArgs["-soft"] = "softening factor.";
@@ -230,17 +232,20 @@ SimulationNBodyInterface *createImplem()
     else if(ImplTag == "ocl+naive") {
         simu = new SimulationNBodyOCLNaive(NBodies, BodiesScheme, Softening);
     }
-    else if(ImplTag == "cuda+naive") {
-        simu = new SimulationNBodyCudaNaive(NBodies, BodiesScheme, Softening);
-    }
-    else if(ImplTag == "cuda+optim1") {
-        simu = new SimulationNBodyCudaOptim1(NBodies, BodiesScheme, Softening);
-    }
-    else if(ImplTag == "cuda+optim2") {
-        simu = new SimulationNBodyCudaOptim2(NBodies, BodiesScheme, Softening);
-    }
-    else if(ImplTag == "cuda+optim3") {
-        simu = new SimulationNBodyCudaOptim3(NBodies, BodiesScheme, Softening);
+    // else if(ImplTag == "cuda+naive") {
+    //     simu = new SimulationNBodyCudaNaive(NBodies, BodiesScheme, Softening);
+    // }
+    // else if(ImplTag == "cuda+optim1") {
+    //     simu = new SimulationNBodyCudaOptim1(NBodies, BodiesScheme, Softening);
+    // }
+    // else if(ImplTag == "cuda+optim2") {
+    //     simu = new SimulationNBodyCudaOptim2(NBodies, BodiesScheme, Softening);
+    // }
+    // else if(ImplTag == "cuda+optim3") {
+    //     simu = new SimulationNBodyCudaOptim3(NBodies, BodiesScheme, Softening);
+    // }
+    else if(ImplTag == "hetero") {
+        simu = new SimulationNBodyHetero(NBodies, BodiesScheme, Softening);
     }
     else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;

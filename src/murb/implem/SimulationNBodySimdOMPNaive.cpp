@@ -40,12 +40,11 @@ void SimulationNBodySimdOMPNaive::computeBodiesAcceleration()
     size_t simd_loop_size = (this->getBodies().getN() / mipp::N<float>()) * mipp::N<float>();
 
     #pragma omp parallel \
-				for schedule(dynamic, 100) \
+				for schedule(dynamic, this->getBodies().getN() / 60) \
                 firstprivate(d, r_qx_j, r_qy_j, r_qz_j, r_m_j, r_rsqrt, \
                              r_rijx, r_rijy, r_rijz, r_rijSquared, \
                              r_softFactor, r_ai, r_ax, r_ay, r_az, \
                              r_softSquared, simd_loop_size)
-      
     // simd
     // flops = n² * 19 + n * 9
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {

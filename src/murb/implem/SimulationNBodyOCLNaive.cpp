@@ -13,17 +13,6 @@
 	throw std::runtime_error(msg); \
 }
 
-#define PLUS_GRAND_DIVISEUR(n) ({                      \
-    int diviseur = 0;                                  \
-    for (int i = ((n) > 256 ? 256 : (n) - 1); i > 0; i--) { \
-        if ((n) % i == 0) {                            \
-            diviseur = i;                              \
-            break;                                     \
-        }                                              \
-    }                                                  \
-    diviseur;                                          \
-})
-
 SimulationNBodyOCLNaive::SimulationNBodyOCLNaive(const unsigned long nBodies, const std::string &scheme, const float soft, const unsigned long randInit)
 	: SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
@@ -90,7 +79,6 @@ SimulationNBodyOCLNaive::SimulationNBodyOCLNaive(const unsigned long nBodies, co
 
 	clBuildProgram(program, 1, &(devices_list[0]), NULL, NULL, NULL);
 
-
 	this->kernel = clCreateKernel(program, KERNEL_FUNC, NULL);
 	CHECK_CL_ERR(err, "Failed to create OpenCL kernel");
 
@@ -104,10 +92,8 @@ SimulationNBodyOCLNaive::SimulationNBodyOCLNaive(const unsigned long nBodies, co
 	err = clGetDeviceInfo(devices_list[0], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &max_work_group_size, NULL);
 	CHECK_CL_ERR(err, "Failed to get max work group size");
 
-
-	this->global_work_size = this->getBodies().getN();
-	this->local_work_size = PLUS_GRAND_DIVISEUR(this->getBodies().getN());
-
+	this->local_work_size = 256;
+	this->global_work_size = ((this->getBodies().getN() + this->local_work_size - 1) / this->local_work_size) * this->local_work_size;
 	free(kernels_source);
 	free(devices_list);
 }
@@ -125,6 +111,7 @@ void SimulationNBodyOCLNaive::computeBodiesAcceleration()
 
 	clEnqueueNDRangeKernel(this->command_queue, kernel, 1, NULL, &this->global_work_size, &this->local_work_size, 0, NULL, NULL);
 	clEnqueueReadBuffer(this->command_queue, this->accelerations_buffer, CL_TRUE, 0, sizeof(accAoS_t<float>) * this->getBodies().getN(), this->accelerations.data(), 0, NULL, NULL);
+	clFinish(command_queue);
 }
 
 void SimulationNBodyOCLNaive::computeOneIteration()
