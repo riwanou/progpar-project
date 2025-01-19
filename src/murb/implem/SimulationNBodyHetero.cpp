@@ -20,10 +20,12 @@ SimulationNBodyHetero::SimulationNBodyHetero(const unsigned long nBodies, const 
 	: SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
 	const float N = this->getBodies().getN();
-	this->flopsPerIte = (20.f * N * N) + N;
-    this->accelerations.ax.resize(this->getBodies().getN());
-    this->accelerations.ay.resize(this->getBodies().getN());
-    this->accelerations.az.resize(this->getBodies().getN());
+  const float simdFlopsPerIte = (20.f * N * N) + (6.0f * N);
+  const float gpuFlopsPerIte = (20.f * N * N) + N;
+
+	const float cpu_percent = 0.1f;
+	this->flopsPerIte = cpu_percent * simdFlopsPerIte + (1.0f - cpu_percent) * gpuFlopsPerIte;
+
 
 	// OCL INITIALISATION
 	cl_uint num_platforms;
@@ -92,7 +94,6 @@ SimulationNBodyHetero::SimulationNBodyHetero(const unsigned long nBodies, const 
 	CHECK_CL_ERR(err, "Failed to get max work group size");
 
 	this->local_work_size = 64;
-	const float cpu_percent = 0.1f;
     this->global_work_size = this->getBodies().getN() * (1.0f - cpu_percent);
     this->global_work_size -= this->global_work_size % local_work_size;
 
