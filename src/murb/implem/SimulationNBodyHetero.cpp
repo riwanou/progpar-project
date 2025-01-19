@@ -91,8 +91,11 @@ SimulationNBodyHetero::SimulationNBodyHetero(const unsigned long nBodies, const 
 	err = clGetDeviceInfo(devices_list[0], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &max_work_group_size, NULL);
 	CHECK_CL_ERR(err, "Failed to get max work group size");
 
-	this->local_work_size = 256;
-	this->global_work_size = (this->getBodies().getN() / this->local_work_size) * this->local_work_size;
+	this->local_work_size = 64;
+	const float cpu_percent = 0.1f;
+    this->global_work_size = this->getBodies().getN() * (1.0f - cpu_percent);
+    this->global_work_size -= this->global_work_size % local_work_size;
+
 
 	this->ax_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * this->global_work_size, NULL, NULL);
 	CHECK_CL_ERR(err, "Failed to create accelerations buffer");
@@ -124,9 +127,6 @@ void SimulationNBodyHetero::computeBodiesAccelerationGPU()
 	clSetKernelArg(kernel, 6, sizeof(int), &N);
 
 	clEnqueueNDRangeKernel(this->command_queue, kernel, 1, NULL, &this->global_work_size, &this->local_work_size, 0, NULL, NULL);
-	clEnqueueReadBuffer(this->command_queue, this->ax_buffer, CL_TRUE, 0, sizeof(float) * this->global_work_size, this->accelerations.ax.data(), 0, NULL, NULL);
-	clEnqueueReadBuffer(this->command_queue, this->ay_buffer, CL_TRUE, 0, sizeof(float) * this->global_work_size, this->accelerations.ay.data(), 0, NULL, NULL);
-	clEnqueueReadBuffer(this->command_queue, this->az_buffer, CL_TRUE, 0, sizeof(float) * this->global_work_size, this->accelerations.az.data(), 0, NULL, NULL);
 }
 
 void SimulationNBodyHetero::computeBodiesAccelerationCPU()
@@ -146,6 +146,13 @@ void SimulationNBodyHetero::computeBodiesAccelerationCPU()
 	// printf("%ld\n", this->global_work_size);
     // simd
     // flops = n² * 19 + n * 9
+	#pragma omp parallel \
+				for schedule(dynamic, (this->getBodies().getN() - this->global_work_size) / 6) \
+                firstprivate(d, r_qx_j, r_qy_j, r_qz_j, r_m_j, r_rsqrt, \
+                             r_rijx, r_rijy, r_rijz, r_rijSquared, \
+                             r_softFactor, r_ai, r_ax, r_ay, r_az, \
+                             r_softSquared, simd_loop_size)
+
     for (unsigned long iBody = this->global_work_size; iBody < this->getBodies().getN(); iBody++) {
         float qx_i = d.qx[iBody];
         float qy_i = d.qy[iBody];
@@ -212,6 +219,9 @@ void SimulationNBodyHetero::computeOneIteration()
 	this->computeBodiesAccelerationGPU();
 	this->computeBodiesAccelerationCPU();
 	clFinish(command_queue);
+	clEnqueueReadBuffer(this->command_queue, this->ax_buffer, CL_TRUE, 0, sizeof(float) * this->global_work_size, this->accelerations.ax.data(), 0, NULL, NULL);
+	clEnqueueReadBuffer(this->command_queue, this->ay_buffer, CL_TRUE, 0, sizeof(float) * this->global_work_size, this->accelerations.ay.data(), 0, NULL, NULL);
+	clEnqueueReadBuffer(this->command_queue, this->az_buffer, CL_TRUE, 0, sizeof(float) * this->global_work_size, this->accelerations.az.data(), 0, NULL, NULL);
 	// time integration
 	this->bodies.updatePositionsAndVelocities(this->accelerations, this->dt);
 }

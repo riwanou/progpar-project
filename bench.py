@@ -153,7 +153,7 @@ def run_omp_simu(bench: str, nb_bodies):
 
 def plot_speedup_omp(data, bodies, title):
     plt.title(title)
-    plt.xlabel("Number of cores")
+    plt.xlabel("Number of threadsc")
     plt.ylabel("Speedup")
 
     nb_cores = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -181,12 +181,18 @@ def run_omp_benches():
         f"OMP_NUM_THREADS=4 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
         f"OMP_NUM_THREADS=5 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
         f"OMP_NUM_THREADS=6 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=7 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=8 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=9 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=10 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=11 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
+        f"OMP_NUM_THREADS=12 ./bin/murb -i {iterations} -n {bodies} --nv --gf --im simd+omp",
     ]
 
-    for bench in omp_bench:
-        bench_stats = run_omp_simu(bench, bodies)
-        stats.append(bench_stats)
-        gen_data_output(bench_stats, data_output_omp)
+    # for bench in omp_bench:
+    #     bench_stats = run_omp_simu(bench, bodies)
+    #     stats.append(bench_stats)
+    #     gen_data_output(bench_stats, data_output_omp)
 
     data = pd.read_csv(data_output_omp)
     subset = data[data["bodies"] == bodies]
@@ -237,8 +243,8 @@ def plot_benches(selected_variants=None, output_file_name="benches", bodies=None
     print(f"Graphique sauvegardé sous {output_file}")
 
 
-init_data_output()
-run_benches()
+# init_data_output()
+# run_benches()
 run_omp_benches()
 
 # Generate plot
@@ -246,7 +252,7 @@ plot_benches(["cpu+naive", "cpu+optim1", "cpu+optim1_approx"], "benches_cpu_fps"
 plot_benches(["simd+naive", "simd+optim1", "simd+optim2"], "benches_simd_fps", 10000, "fps")
 plot_benches(["ocl+naive", "cuda+naive", "cuda+optim1", "cuda+optim2", "cuda+optim3"], "benches_gpu_fps", 30000, "fps")
 plot_benches(
-    ["cpu+optim1_approx", "simd+optim1", "simd+omp", "cuda+optim2"],
+    ["cpu+optim1_approx", "simd+optim1", "simd+omp", "cuda+optim2", "hetero"],
     "benches_fast_fps",
     10000, "fps"
 )
@@ -255,7 +261,7 @@ plot_benches(["cpu+naive", "cpu+optim1", "cpu+optim1_approx"], "benches_cpu_gflo
 plot_benches(["simd+naive", "simd+optim1", "simd+optim2"], "benches_simd_gflops", 10000, "gflops")
 plot_benches(["ocl+naive", "cuda+naive", "cuda+optim1", "cuda+optim2", "cuda+optim3"], "benches_gpu_gflops", 30000, "gflops")
 plot_benches(
-    ["cpu+optim1_approx", "simd+optim1", "simd+omp", "cuda+optim2"],
+    ["cpu+optim1_approx", "simd+optim1", "simd+omp", "cuda+optim2", "hetero"],
     "benches_fast_gflops",
     10000, "gflops"
 )

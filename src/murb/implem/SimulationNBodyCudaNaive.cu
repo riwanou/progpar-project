@@ -17,7 +17,7 @@ __global__ void kernel_cuda_naive(dataAoS_t<float> *inBodies, accAoS_t<float> *o
                                   const float soft, const float G)
 {
     size_t iBody = blockDim.x * blockIdx.x + threadIdx.x;
-    if (iBody > nbBodies) return;
+    if (iBody >= nbBodies) return;
 
     float ax = 0.0f;
     float ay = 0.0f;
@@ -65,7 +65,7 @@ void SimulationNBodyCudaNaive::computeBodiesAcceleration()
 {
     const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
 
-    dim3 block(1024);
+    dim3 block(64);
     dim3 grid((this->getBodies().getN() + block.x - 1) / block.x);
 
     CUDA_CHECK(cudaMemcpy(this->cudaBodies, d.data(), this->getBodies().getN() * sizeof(dataAoS_t<float>),

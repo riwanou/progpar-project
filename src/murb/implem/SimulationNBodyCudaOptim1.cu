@@ -20,6 +20,7 @@ __global__ void kernel_cuda_optim1(cudaPackedAoS_t<float> *inBodies, accAoS_t<fl
 
     extern __shared__ cudaPackedAoS_t<float> shBodies[sizePass];
     const unsigned int iBody = blockDim.x * blockIdx.x + threadIdx.x; // 2 flops
+    if (iBody >= nbBodies) return;
 
     float ax = 0.0f;
     float ay = 0.0f;

@@ -28,10 +28,10 @@
 
 #include "implem/SimulationNBodyOCLNaive.hpp"
 
-// #include "implem/SimulationNBodyCudaNaive.hpp"
-// #include "implem/SimulationNBodyCudaOptim1.hpp"
-// #include "implem/SimulationNBodyCudaOptim2.hpp"
-// #include "implem/SimulationNBodyCudaOptim3.hpp"
+#include "implem/SimulationNBodyCudaNaive.hpp"
+#include "implem/SimulationNBodyCudaOptim1.hpp"
+#include "implem/SimulationNBodyCudaOptim2.hpp"
+#include "implem/SimulationNBodyCudaOptim3.hpp"
 
 #include "implem/SimulationNBodyHetero.hpp"
 
@@ -232,18 +232,18 @@ SimulationNBodyInterface *createImplem()
     else if(ImplTag == "ocl+naive") {
         simu = new SimulationNBodyOCLNaive(NBodies, BodiesScheme, Softening);
     }
-    // else if(ImplTag == "cuda+naive") {
-    //     simu = new SimulationNBodyCudaNaive(NBodies, BodiesScheme, Softening);
-    // }
-    // else if(ImplTag == "cuda+optim1") {
-    //     simu = new SimulationNBodyCudaOptim1(NBodies, BodiesScheme, Softening);
-    // }
-    // else if(ImplTag == "cuda+optim2") {
-    //     simu = new SimulationNBodyCudaOptim2(NBodies, BodiesScheme, Softening);
-    // }
-    // else if(ImplTag == "cuda+optim3") {
-    //     simu = new SimulationNBodyCudaOptim3(NBodies, BodiesScheme, Softening);
-    // }
+    else if(ImplTag == "cuda+naive") {
+        simu = new SimulationNBodyCudaNaive(NBodies, BodiesScheme, Softening);
+    }
+    else if(ImplTag == "cuda+optim1") {
+        simu = new SimulationNBodyCudaOptim1(NBodies, BodiesScheme, Softening);
+    }
+    else if(ImplTag == "cuda+optim2") {
+        simu = new SimulationNBodyCudaOptim2(NBodies, BodiesScheme, Softening);
+    }
+    else if(ImplTag == "cuda+optim3") {
+        simu = new SimulationNBodyCudaOptim3(NBodies, BodiesScheme, Softening);
+    }
     else if(ImplTag == "hetero") {
         simu = new SimulationNBodyHetero(NBodies, BodiesScheme, Softening);
     }
