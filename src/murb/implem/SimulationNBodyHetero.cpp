@@ -92,8 +92,7 @@ SimulationNBodyHetero::SimulationNBodyHetero(const unsigned long nBodies, const 
 	CHECK_CL_ERR(err, "Failed to get max work group size");
 
 	this->local_work_size = 256;
-	this->global_work_size = this->getBodies().getN();
-	// this->global_work_size = 2048;
+	this->global_work_size = (this->getBodies().getN() / this->local_work_size) * this->local_work_size;
 
 	this->ax_buffer = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(float) * this->global_work_size, NULL, NULL);
 	CHECK_CL_ERR(err, "Failed to create accelerations buffer");
@@ -104,8 +103,6 @@ SimulationNBodyHetero::SimulationNBodyHetero(const unsigned long nBodies, const 
 
 	this->data_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(dataAoS_t<float>) * this->getBodies().getN(), NULL, NULL);
 	CHECK_CL_ERR(err, "Failed to create data buffer");
-
-	this->global_work_size = (this->getBodies().getN() / this->local_work_size) * this->local_work_size;
 
 	free(kernels_source);
 	free(devices_list);
@@ -183,9 +180,9 @@ void SimulationNBodyHetero::computeBodiesAccelerationCPU()
             r_az += r_ai * r_rijz; // 2 flops
         }
 
-        this->accelerations.ax[iBody] += mipp::sum(r_ax) * this->G; // 3 flops
-        this->accelerations.ay[iBody] += mipp::sum(r_ay) * this->G; // 3 flops
-        this->accelerations.az[iBody] += mipp::sum(r_az) * this->G; // 3 flops
+        this->accelerations.ax[iBody] = mipp::sum(r_ax) * this->G; // 2 flops
+        this->accelerations.ay[iBody] = mipp::sum(r_ay) * this->G; // 2 flops
+        this->accelerations.az[iBody] = mipp::sum(r_az) * this->G; // 2 flops
 
         // remaining, elements in the j-array don't fit in a simd register
         // flops = (remaining n) * 21

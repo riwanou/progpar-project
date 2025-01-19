@@ -88,10 +88,6 @@ SimulationNBodyOCLNaive::SimulationNBodyOCLNaive(const unsigned long nBodies, co
 	this->data_buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(dataAoS_t<float>) * this->getBodies().getN(), NULL, NULL);
 	CHECK_CL_ERR(err, "Failed to create data buffer");
 
-	size_t max_work_group_size;
-	err = clGetDeviceInfo(devices_list[0], CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &max_work_group_size, NULL);
-	CHECK_CL_ERR(err, "Failed to get max work group size");
-
 	this->local_work_size = 256;
 	this->global_work_size = ((this->getBodies().getN() + this->local_work_size - 1) / this->local_work_size) * this->local_work_size;
 	free(kernels_source);
